@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="SshConfigs">
+    <configs>
+      <sshConfig authType="PASSWORD" host="4.tcp.ngrok.io" id="0aa2c19e-2d76-4ddb-a46f-2c60d08abb04" port="15981" nameFormat="DESCRIPTIVE" username="gilb-server" useOpenSSHConfig="true" />
+    </configs>
+  </component>
+</project>

@@ -3,6 +3,7 @@
   <component name="SshConfigs">
     <configs>
       <sshConfig authType="PASSWORD" host="4.tcp.ngrok.io" id="0aa2c19e-2d76-4ddb-a46f-2c60d08abb04" port="15981" nameFormat="DESCRIPTIVE" username="gilb-server" useOpenSSHConfig="true" />
+      <sshConfig authType="PASSWORD" host="0.tcp.ngrok.io" id="172a5c8b-a587-4e89-9029-506fde8c60a6" port="13746" nameFormat="DESCRIPTIVE" username="gilb-server" useOpenSSHConfig="true" />
     </configs>
   </component>
 </project>

@@ -52,7 +52,7 @@ class BasicTrainer:
         print("Running with the following configuration:")
         pprint.pprint(self.config, width=1)
         self.scale_factor = self.config["scale_factor"]
-        self.device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
+        self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.num_gpus = torch.cuda.device_count()
         self.num_gpus = 1  # comment if parallel is desired
         self.parallel = False
@@ -404,17 +404,21 @@ class BasicTrainer:
         for i, out, metrics_t in zip(range(len(outputs)), outputs, self.branch_metrics_tracker):
             predicted_classes = torch.argmax(out, dim=1)
             for j, class_idx in enumerate(predicted_classes):
-                batch_votes[j, class_idx] += (1 / len(outputs))
+                if class_idx in [i - 2, i - 1, i, i + 1, i + 2]:
+                    batch_votes[j, class_idx] += (2 / len(outputs))
+                else:
+                    batch_votes[j, class_idx] += (1 / len(outputs))
 
             branches_loss = self.cls_criterion[i](out, tar.long()) / len(outputs)
             metrics_t.update(branches_loss, out, tar)
             avg_branches_loss += branches_loss
             # special_tensor = torch.cat((special_tensor, out), dim=1)
 
-        special_accuracy_tensor = torch.cat([torch.unsqueeze(item[:, i], dim=1) for i, item in enumerate(outputs)], dim=1)
+        # special_accuracy_tensor = torch.cat([torch.unsqueeze(item[:, i], dim=1) for i, item in enumerate(outputs)], dim=1)
         # special_tar = torch.stack([i * 10 + i for i in tar]).to(self.device)
-        special_loss = self.special_cls_criterion(special_accuracy_tensor, tar)
-        total_loss = 0 * special_loss + 1 * avg_branches_loss
+        # special_loss = self.special_cls_criterion(special_tensor, special_tar)
+        # print(special_loss)
+        total_loss = avg_branches_loss   # + 1 * special_loss
         self.metrics_tracker.update(total_loss, batch_votes, tar)
         return outputs, total_loss
 
@@ -502,20 +506,6 @@ class BasicTrainer:
             if self.device != torch.device('cpu'):
                 msg_to_display += f' | Avg. Batch Processing Time: {int(1000 * (end_time - start_time) / num_batches)} ms'
                 print(msg_to_display)
-            if epoch % 10 == 0:
-                if self.config["network_type"] in ["hyper-ensemble-voting", "hyper-ensemble-stacking", "hyper-cls-new1"]:
-                    acc_msg_to_display = f'Tot_class_acc: {self.metrics_tracker.get_class_accuracy(num_batches)}\n'
-                    acc_msg_to_display += ''.join(
-                        [f'{i}_branch_acc: {self.branch_metrics_tracker[i].get_class_accuracy(num_batches)}\n' for i in
-                         range(len(self.branch_metrics_tracker))])
-                elif self.config["network_type"] in ["hyper-cls-new", "hyper-cls"]:
-                    acc_msg_to_display = f'Tot_class_acc: {self.metrics_tracker.get_class_accuracy(num_batches)}\n'
-                    acc_msg_to_display += ''.join(
-                        [f'{i}_branch_acc: {self.branch_metrics_tracker[i].get_class_accuracy(num_batches)}\n' for i in
-                         range(len(self.branch_metrics_tracker))])
-                else:
-                    acc_msg_to_display = f'Tot_class_acc: {self.metrics_tracker.get_class_accuracy(num_batches)}'
-                print(acc_msg_to_display)
             log_dict = {f"{train_test_val}_loss": norm_loss, f"{train_test_val}_top1_acc": 100. * norm_top1_acc}
             if self.include_top5:
                 log_dict[f"{train_test_val}_top5_acc"] = 100. * self.metrics_tracker.get_norm_top5_acc()
@@ -526,20 +516,21 @@ class BasicTrainer:
         else:
             msg_to_display += f' | Avg. Batch Processing Time: {int(1000 * (end_time - start_time) / num_batches)} ms'
             print(msg_to_display)
-            if epoch % 10 == 0:
-                if self.config["network_type"] in ["hyper-ensemble-voting", "hyper-ensemble-stacking", "hyper-cls-new1"]:
-                    acc_msg_to_display = f'Tot_class_acc: {self.metrics_tracker.get_class_accuracy(num_batches)}\n'
-                    acc_msg_to_display += ''.join(
-                        [f'{i}_branch_acc: {self.branch_metrics_tracker[i].get_class_accuracy(num_batches)}\n' for i in
-                         range(len(self.branch_metrics_tracker))])
-                elif self.config["network_type"] in ["hyper-cls-new", "hyper-cls"]:
-                    acc_msg_to_display = f'Tot_class_acc: {self.metrics_tracker.get_class_accuracy(num_batches)}\n'
-                    acc_msg_to_display += ''.join(
-                        [f'{i}_branch_acc: {self.branch_metrics_tracker[i].get_class_accuracy(num_batches)}\n' for i in
-                         range(len(self.branch_metrics_tracker))])
-                else:
-                    acc_msg_to_display = f'Tot_class_acc: {self.metrics_tracker.get_class_accuracy(num_batches)}'
-                print(acc_msg_to_display)
+
+        if epoch % 10 == 0 and f'decisio' not in self.config["network_type"]:
+            if self.config["network_type"] in ["hyper-ensemble-voting", "hyper-ensemble-stacking", "hyper-cls-new1"]:
+                acc_msg_to_display = f'Tot_class_acc: {self.metrics_tracker.get_class_accuracy(num_batches)}\n'
+                acc_msg_to_display += ''.join(
+                    [f'{i}_branch_acc: {self.branch_metrics_tracker[i].get_class_accuracy(num_batches)}\n' for i in
+                     range(len(self.branch_metrics_tracker))])
+            elif self.config["network_type"] in ["hyper-cls-new", "hyper-cls"]:
+                acc_msg_to_display = f'Tot_class_acc: {self.metrics_tracker.get_class_accuracy(num_batches)}\n'
+                acc_msg_to_display += ''.join(
+                    [f'{i}_branch_acc: {self.branch_metrics_tracker[i].get_class_accuracy(num_batches)}\n' for i in
+                     range(len(self.branch_metrics_tracker))])
+            else:
+                acc_msg_to_display = f'Tot_class_acc: {self.metrics_tracker.get_class_accuracy(num_batches)}'
+            print(acc_msg_to_display)
 
         if train_test_val == 'test':
             top1_acc = 100. * norm_top1_acc

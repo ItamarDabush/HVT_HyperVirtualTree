@@ -4,7 +4,16 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="6dadbdc2-e2f8-40c0-80de-3454eee95714" name="Changes" comment="" />
+    <list default="true" id="6dadbdc2-e2f8-40c0-80de-3454eee95714" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/deployment.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/deployment.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/sshConfigs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/sshConfigs.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/basic_classifier.py" beforeDir="false" afterPath="$PROJECT_DIR$/models/basic_classifier.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/trainers/baseline_trainers.py" beforeDir="false" afterPath="$PROJECT_DIR$/trainers/baseline_trainers.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/trainers/basic_trainer.py" beforeDir="false" afterPath="$PROJECT_DIR$/trainers/basic_trainer.py" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -16,6 +25,9 @@
         <option value="Python Script" />
       </list>
     </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="HighlightingSettingsPerFile">
     <setting file="file://$PROJECT_DIR$/models/hyper_mnist_classifier.py" root0="SKIP_INSPECTION" />
@@ -32,6 +44,7 @@
   &quot;keyToString&quot;: {
     &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
     &quot;WebServerToolWindowFactoryState&quot;: &quot;true&quot;,
     &quot;WebServerToolWindowPanel.toolwindow.highlight.mappings&quot;: &quot;true&quot;,
     &quot;WebServerToolWindowPanel.toolwindow.highlight.symlinks&quot;: &quot;true&quot;,
@@ -45,7 +58,7 @@
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
     &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
     &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;web.server&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;,
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
 }</component>
@@ -58,7 +71,7 @@
     </key>
   </component>
   <component name="RunManager" selected="Python.baseline_trainers">
-    <configuration name="baseline_trainers" type="PythonConfigurationType" factoryName="Python">
+    <configuration name="baseline_trainers" type="PythonConfigurationType" factoryName="Python" singleton="false">
       <module name="HyperDecisioNet_remote" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -79,7 +92,7 @@
         </option>
       </PathMappingSettings>
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/trainers/baseline_trainers.py" />
-      <option name="PARAMETERS" value="-d CIFAR10 -e expirements --network_type hyper-ensemble-stacking --augment --use_wandb" />
+      <option name="PARAMETERS" value="-d CIFAR10 -e nin --network_type nin --augment" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
       <option name="MODULE_MODE" value="false" />
@@ -87,7 +100,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="basic_classifier" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+    <configuration name="decisionet_trainers" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="HyperDecisioNet_remote" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -95,13 +108,13 @@
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/models" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/trainers" />
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="C:\Users\Itamar-pc\Desktop\Sofware_Thesis\HyperDecisioNet_remote\models\basic_classifier.py" />
-      <option name="PARAMETERS" value="" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/trainers/decisionet_trainers.py" />
+      <option name="PARAMETERS" value="-d CIFAR10 -e decisio_nin --network_type decisio_nin --augment --beta 0.5" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
       <option name="MODULE_MODE" value="false" />
@@ -131,7 +144,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="mnist_classifier" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+    <configuration name="find_preamble" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="HyperDecisioNet_remote" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -139,12 +152,34 @@
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/models" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/scripts" />
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/models/mnist_classifier.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/scripts/find_preamble.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="find_preamble_using gpu" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="HyperDecisioNet_remote" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/scripts" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/scripts/find_preamble_using gpu.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -199,17 +234,18 @@
     </configuration>
     <list>
       <item itemvalue="Python.baseline_trainers" />
+      <item itemvalue="Python.decisionet_trainers" />
+      <item itemvalue="Python.find_preamble" />
+      <item itemvalue="Python.find_preamble_using gpu" />
       <item itemvalue="Python.delete" />
       <item itemvalue="Python.sweep_run" />
-      <item itemvalue="Python.basic_classifier" />
-      <item itemvalue="Python.mnist_classifier" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.decisionet_trainers" />
+        <item itemvalue="Python.find_preamble_using gpu" />
+        <item itemvalue="Python.find_preamble" />
         <item itemvalue="Python.delete" />
-        <item itemvalue="Python.sweep_run" />
-        <item itemvalue="Python.basic_classifier" />
-        <item itemvalue="Python.mnist_classifier" />
         <item itemvalue="Python.sweep_run" />
       </list>
     </recent_temporary>
@@ -237,7 +273,10 @@
       <workItem from="1701525943247" duration="1804000" />
       <workItem from="1701782184366" duration="11912000" />
       <workItem from="1703703847268" duration="38131000" />
-      <workItem from="1704954295754" duration="25012000" />
+      <workItem from="1704954295754" duration="64813000" />
+      <workItem from="1707117350243" duration="19086000" />
+      <workItem from="1709564062572" duration="14187000" />
+      <workItem from="1710703017342" duration="1026000" />
     </task>
     <servers />
   </component>
@@ -248,24 +287,9 @@
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/trainers/basic_trainer.py</url>
-          <line>506</line>
-          <option name="timeStamp" value="22" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/trainers/baseline_trainers.py</url>
-          <line>129</line>
-          <option name="timeStamp" value="35" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/trainers/basic_trainer.py</url>
-          <line>391</line>
-          <option name="timeStamp" value="39" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/trainers/basic_trainer.py</url>
-          <line>382</line>
-          <option name="timeStamp" value="40" />
+          <url>file://$PROJECT_DIR$/trainers/decisionet_trainers.py</url>
+          <line>257</line>
+          <option name="timeStamp" value="28" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>
@@ -278,12 +302,15 @@
     </breakpoint-manager>
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
+    <SUITE FILE_PATH="coverage/HyperDecisioNet_remote$decisionet_trainers.coverage" NAME="decisionet_trainers Coverage Results" MODIFIED="1710236323457" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/trainers" />
     <SUITE FILE_PATH="coverage/HyperDecisioNet_remote$sweep_run__1_.coverage" NAME="sweep_run Coverage Results" MODIFIED="1693858078940" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/scripts" />
-    <SUITE FILE_PATH="coverage/HyperDecisioNet_remote$baseline_trainers.coverage" NAME="baseline_trainers Coverage Results" MODIFIED="1705395153620" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/trainers" />
+    <SUITE FILE_PATH="coverage/HyperDecisioNet_remote$baseline_trainers.coverage" NAME="baseline_trainers Coverage Results" MODIFIED="1710241011541" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/trainers" />
+    <SUITE FILE_PATH="coverage/HyperDecisioNet_remote$find_preamble.coverage" NAME="find_preamble Coverage Results" MODIFIED="1705746018528" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/scripts" />
     <SUITE FILE_PATH="coverage/HyperDecisioNet_remote$try.coverage" NAME="try Coverage Results" MODIFIED="1689000300002" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/scripts" />
     <SUITE FILE_PATH="coverage/HyperDecisioNet_remote$mnist_classifier.coverage" NAME="mnist_classifier Coverage Results" MODIFIED="1689419567007" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/models" />
     <SUITE FILE_PATH="coverage/HyperDecisioNet_remote$sweep_run.coverage" NAME="sweep_run Coverage Results" MODIFIED="1693888662809" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/scripts" />
     <SUITE FILE_PATH="coverage/HyperDecisioNet_remote$delete.coverage" NAME="delete Coverage Results" MODIFIED="1702142435974" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/utils" />
+    <SUITE FILE_PATH="coverage/HyperDecisioNet_remote$find_preamble_using_gpu.coverage" NAME="find_preamble_using gpu Coverage Results" MODIFIED="1705822484357" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/scripts" />
     <SUITE FILE_PATH="coverage/HyperDecisioNet_remote$hyper_mnist_classifier.coverage" NAME="hyper_mnist_classifier Coverage Results" MODIFIED="1689429379397" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/models" />
   </component>
 </project>

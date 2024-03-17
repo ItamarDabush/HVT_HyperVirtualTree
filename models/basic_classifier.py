@@ -216,7 +216,7 @@ class MetaLearner(nn.Module):
 class HyperBasicClassifier(nn.Module):
 
     def __init__(self, dataset_name, num_branches=1, meta_block_num=1, out_size=2, scale_factor=128, parallel=False,
-                 meta_learn=False, device=torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')):
+                 meta_learn=False, device=torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')):
         super(HyperBasicClassifier, self).__init__()
 
         self.meta_block_num = meta_block_num

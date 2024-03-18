@@ -69,42 +69,12 @@ class BasicTrainer:
         self.transforms = self.init_transforms()
         self.datasets = self.init_data_sets()
         self.data_loaders = self.init_data_loaders()
-        if self.config["network_type"] == "hyper-cls-new":
-            self.cls_criterion = nn.BCEWithLogitsLoss()
-        elif self.config["network_type"] == "hyper-cls-new1":
-            self.cls_criterion = nn.CrossEntropyLoss(weight=torch.tensor([0.1, 0.9], device=self.device))
-            self.model_cls_criterion = nn.CrossEntropyLoss()
-        elif self.config["network_type"] == "hyper-cls":
-            self.cls_criterion = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([9], device=self.device))
-            self.model_cls_criterion = nn.CrossEntropyLoss()
-        elif self.config["network_type"] == "hyper-ensemble-voting":
-            self.cls_criterion = [nn.CrossEntropyLoss(weight=torch.tensor([3.0 if i in [j-2, j-1, j, j+1, j+2] else 1.0 for i in range(len(NUM_CLASSES) + 1)], device=self.device)) for j in range(len(NUM_CLASSES) + 1)]
-            self.special_cls_criterion = nn.CrossEntropyLoss()
-        elif self.config["network_type"] == "hyper-ensemble-stacking":
-            self.cls_criterion = [nn.CrossEntropyLoss(weight=torch.tensor([3.0 if i in [j-2, j-1, j, j+1, j+2] else 1.0 for i in range(len(NUM_CLASSES) + 1)], device=self.device)) for j in range(len(NUM_CLASSES) + 1)]
-            self.special_cls_criterion = nn.CrossEntropyLoss()
-        else:
-            self.cls_criterion = nn.CrossEntropyLoss()
+        self.cls_criterion = nn.CrossEntropyLoss()
         self.optimizer = self.init_optimizer()
         self.lr_scheduler = self.init_lr_scheduler()
-        if self.config["network_type"] == "hyper-cls-new":
-            self.branch_metrics_tracker = [BinaryMetricsTracker(NUM_CLASSES[self.dataset_name], self.include_top5) for _ in range(self.model.num_branches)]
-            self.metrics_tracker = MetricsTracker(NUM_CLASSES[self.dataset_name], self.include_top5)
-        elif self.config["network_type"] in ["hyper-ensemble-voting", "hyper-ensemble-stacking"]:
-            self.branch_metrics_tracker = [MetricsTracker(NUM_CLASSES[self.dataset_name], self.include_top5) for _ in range(self.model.num_branches)]
-            self.metrics_tracker = MetricsTracker(NUM_CLASSES[self.dataset_name], self.include_top5)
-        elif self.config["network_type"] == "hyper-cls-new1":
-            self.branch_metrics_tracker = [MetricsTracker(self.model.out_size, self.include_top5) for _
-                                           in range(self.model.num_branches)]
-            self.metrics_tracker = MetricsTracker(NUM_CLASSES[self.dataset_name], self.include_top5)
-        elif self.config["network_type"] == "hyper-cls":
-            self.branch_metrics_tracker = [BinaryMetricsTracker(self.model.out_size, self.include_top5) for _ in range(self.model.num_branches)]
-            self.metrics_tracker = MetricsTracker(NUM_CLASSES[self.dataset_name], self.include_top5)
-        else:
-            self.metrics_tracker = MetricsTracker(NUM_CLASSES[self.dataset_name], self.include_top5)
+        self.metrics_tracker = MetricsTracker(NUM_CLASSES[self.dataset_name], self.include_top5)
         if self.do_early_stopping:
             self.early_stopping = self.init_early_stopping()
-
         ckpt_fn = 'best' if not self.use_wandb else wandb.run.name
         checkpoints_dir = os.path.join(self.BASE_CHECKPOINTS_DIR, experiment_name)
         if not os.path.isdir(checkpoints_dir):
@@ -379,97 +349,6 @@ class BasicTrainer:
             train_acc = self.metrics_tracker.get_norm_top1_acc()
             self.lr_scheduler_step(train_acc=train_acc)
 
-    def _hyper_ensemble_stacking_feed_forward(self, *args):
-        outputs = self.model(args[0])
-        tar = args[1]
-        avg_branches_loss = 0
-        for i, out, metrics_t in zip(range(len(outputs)), outputs, self.branch_metrics_tracker):
-            predicted_classes = torch.argmax(out, dim=1)
-            branches_loss = self.cls_criterion[i](out, tar.long()) / len(outputs)
-            metrics_t.update(branches_loss, out, tar)
-            avg_branches_loss += branches_loss
-
-        avg_output = torch.sum(torch.stack(outputs), dim=0) / len(outputs)
-        avg_loss = self.special_cls_criterion(avg_output, tar)
-        total_loss = 0 * avg_loss + 1 * avg_branches_loss
-        self.metrics_tracker.update(total_loss, avg_output, tar)
-        return outputs, total_loss
-
-    def _hyper_ensemble_voting_feed_forward(self, *args):
-        outputs = self.model(args[0])
-        tar = args[1]
-        batch_votes = torch.zeros((outputs[0].shape[0], NUM_CLASSES[self.dataset_name])).to(self.device)
-        avg_branches_loss = 0
-        # special_tensor = torch.tensor([]).to(self.device)
-        for i, out, metrics_t in zip(range(len(outputs)), outputs, self.branch_metrics_tracker):
-            predicted_classes = torch.argmax(out, dim=1)
-            for j, class_idx in enumerate(predicted_classes):
-                if class_idx in [i - 2, i - 1, i, i + 1, i + 2]:
-                    batch_votes[j, class_idx] += (2 / len(outputs))
-                else:
-                    batch_votes[j, class_idx] += (1 / len(outputs))
-
-            branches_loss = self.cls_criterion[i](out, tar.long()) / len(outputs)
-            metrics_t.update(branches_loss, out, tar)
-            avg_branches_loss += branches_loss
-            # special_tensor = torch.cat((special_tensor, out), dim=1)
-
-        # special_accuracy_tensor = torch.cat([torch.unsqueeze(item[:, i], dim=1) for i, item in enumerate(outputs)], dim=1)
-        # special_tar = torch.stack([i * 10 + i for i in tar]).to(self.device)
-        # special_loss = self.special_cls_criterion(special_tensor, special_tar)
-        # print(special_loss)
-        total_loss = avg_branches_loss   # + 1 * special_loss
-        self.metrics_tracker.update(total_loss, batch_votes, tar)
-        return outputs, total_loss
-
-    def _hyper_cls_feed_forward(self, *args):
-        outputs = self.model(args[0])
-        tar = args[1]
-        # avg_branches_loss = 0
-        # for i in range(len(outputs)):
-        #     one_hot_tensor = (tar == i).float().to(self.device)
-        #     branches_loss = self.cls_criterion(outputs[i].squeeze(), one_hot_tensor) / len(outputs)
-        #     self.branch_metrics_tracker[i].update(branches_loss, outputs[i].squeeze(), one_hot_tensor)
-        #     avg_branches_loss += branches_loss
-        output_tensor = torch.cat([tensor for tensor in outputs], dim=1)
-        model_loss = self.model_cls_criterion(output_tensor, tar.long())
-        # total_loss = 0.95 * model_loss + 0.05 * avg_branches_loss
-        self.metrics_tracker.update(model_loss, output_tensor, args[1])
-        return outputs, model_loss
-
-    def _hyper_cls_new_feed_forward(self, *args):
-        outputs = self.model(args[0])
-        loss = 0
-        tar = args[1]
-        for i in range(len(outputs)):
-            loss += self.cls_criterion(outputs[i].squeeze(), (tar[i] == i).float()) / len(outputs)
-            self.branch_metrics_tracker[i].update(loss, outputs[i].squeeze(), (tar[i] == i).float())
-        # self.metrics_tracker.update(loss, torch.tensor([[1, 0, 0, 0, 0], [0, 1, 0, 0, 0]]), torch.tensor([1, 1]))
-        return outputs, loss
-
-    def _hyper_cls_new1_feed_forward(self, *args):
-        outputs = self.model(args[0])
-        output_tensor = torch.stack([tensor[:, 1] for tensor in outputs], dim=1)
-        tar = args[1]
-        branches_loss = 0
-        for i in range(len(outputs)):
-            one_hot_tensor = (tar == i).long().to(self.device)
-            branches_loss += self.cls_criterion(outputs[i], one_hot_tensor) / len(outputs)
-            self.branch_metrics_tracker[i].update(branches_loss, outputs[i], one_hot_tensor)
-        model_loss = self.model_cls_criterion(output_tensor, tar)
-        total_loss = 0.5 * model_loss + 0.5 * branches_loss
-        self.metrics_tracker.update(total_loss, output_tensor, tar)
-        return outputs, total_loss
-
-    def _hyper_feed_forward(self, *args):
-        outputs = self.model(args[0])
-        tar = args[1]
-        loss = self.cls_criterion(outputs[0], tar.long())
-        # loss = [self.cls_criterion(out, tar.long()) for out in outputs]
-        # loss_mean = sum(loss)/len(loss)
-        self.metrics_tracker.update(loss, outputs[0], args[1])
-        return outputs, loss
-
     def _feed_forward(self, *args):  # inputs: args[0] targets: args[1]
         outputs = self.model(args[0])
         loss = self.cls_criterion(outputs, args[1].long())
@@ -483,8 +362,6 @@ class BasicTrainer:
         data_loader = getattr(self.data_loaders, f'{train_test_val}_loader')
         num_batches = len(data_loader)
         self.metrics_tracker.reset(num_batches)
-        if self.config["network_type"] in ["hyper-cls-new", "hyper-cls-new1", "hyper-ensemble-voting", "hyper-ensemble-stacking", "hyper-cls"]:
-            [tracker.reset(num_batches) for tracker in self.branch_metrics_tracker]
         with torch.set_grad_enabled(training):
             start_time = time.time()
             for batch_idx, (inputs, targets) in enumerate(data_loader):
@@ -494,14 +371,10 @@ class BasicTrainer:
                 # if not self.use_wandb:  # or self.device == 'cpu':
                 #     progress_bar(batch_idx, num_batches, msg_to_display)
             end_time = time.time()
-        if self.config["network_type"] == "hyper-cls-new":
-            msg_to_display = ""
-            norm_top1_acc = self.branch_metrics_tracker[0].get_norm_top1_acc()
-            norm_loss = self.branch_metrics_tracker[0].get_norm_loss()
-        else:
-            msg_to_display = self.metrics_tracker.get_message_to_display(num_batches)
-            norm_top1_acc = self.metrics_tracker.get_norm_top1_acc()
-            norm_loss = self.metrics_tracker.get_norm_loss()
+
+        msg_to_display = self.metrics_tracker.get_message_to_display(num_batches)
+        norm_top1_acc = self.metrics_tracker.get_norm_top1_acc()
+        norm_loss = self.metrics_tracker.get_norm_loss()
         if self.use_wandb:
             if self.device != torch.device('cpu'):
                 msg_to_display += f' | Avg. Batch Processing Time: {int(1000 * (end_time - start_time) / num_batches)} ms'
@@ -518,18 +391,7 @@ class BasicTrainer:
             print(msg_to_display)
 
         if epoch % 10 == 0 and f'decisio' not in self.config["network_type"]:
-            if self.config["network_type"] in ["hyper-ensemble-voting", "hyper-ensemble-stacking", "hyper-cls-new1"]:
-                acc_msg_to_display = f'Tot_class_acc: {self.metrics_tracker.get_class_accuracy(num_batches)}\n'
-                acc_msg_to_display += ''.join(
-                    [f'{i}_branch_acc: {self.branch_metrics_tracker[i].get_class_accuracy(num_batches)}\n' for i in
-                     range(len(self.branch_metrics_tracker))])
-            elif self.config["network_type"] in ["hyper-cls-new", "hyper-cls"]:
-                acc_msg_to_display = f'Tot_class_acc: {self.metrics_tracker.get_class_accuracy(num_batches)}\n'
-                acc_msg_to_display += ''.join(
-                    [f'{i}_branch_acc: {self.branch_metrics_tracker[i].get_class_accuracy(num_batches)}\n' for i in
-                     range(len(self.branch_metrics_tracker))])
-            else:
-                acc_msg_to_display = f'Tot_class_acc: {self.metrics_tracker.get_class_accuracy(num_batches)}'
+            acc_msg_to_display = f'Tot_class_acc: {self.metrics_tracker.get_class_accuracy(num_batches)}'
             print(acc_msg_to_display)
 
         if train_test_val == 'test':
@@ -547,22 +409,7 @@ class BasicTrainer:
         inputs, targets = self.input_and_targets_to_device(inputs, targets)
         if training:
             self.optimizer.zero_grad()
-        if self.config["network_type"] == "hyper-ensemble-stacking":
-            outputs, loss = self._hyper_ensemble_stacking_feed_forward(inputs, targets)
-        elif self.config["network_type"] == "hyper-ensemble-voting":
-            outputs, loss = self._hyper_ensemble_voting_feed_forward(inputs, targets)
-        elif self.config["network_type"] == "ensemble-voting":
-            outputs, loss = self._hyper_ensemble_voting_feed_forward(inputs, targets)
-        elif self.config["network_type"] == "hyper":
-            _, loss = self._hyper_feed_forward(inputs, targets)
-        elif self.config["network_type"] == "hyper-cls":
-            _, loss = self._hyper_cls_feed_forward(inputs, targets)
-        elif self.config["network_type"] == "hyper-cls-new":
-            _, loss = self._hyper_cls_new_feed_forward(*self.create_batches(inputs, targets))
-        elif self.config["network_type"] == "hyper-cls-new1":
-            outputs, loss = self._hyper_cls_new1_feed_forward(inputs, targets)
-        else:
-            _, loss = self._feed_forward(inputs, targets)
+        _, loss = self._feed_forward(inputs, targets)
         if training:
             loss.backward()
             self.optimizer.step()

@@ -126,8 +126,8 @@ class BasicClassifierTrainer(BasicTrainer):
 
 
 if __name__ == '__main__':
-    trainer = NetworkInNetworkTrainer()
-    # trainer = BasicClassifierTrainer()
+    # trainer = NetworkInNetworkTrainer()
+    trainer = BasicClassifierTrainer()
     # trainer = WideResNetTrainer()
     trainer.train_model()
     # trainer.evaluate()

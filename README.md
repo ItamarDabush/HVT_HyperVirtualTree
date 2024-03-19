@@ -1,5 +1,5 @@
-# DecisioNet
-This is the official PyTorch implementation of the paper ["DecisioNet: A Binary-Tree Structured Neural Network"](https://openaccess.thecvf.com/content/ACCV2022/papers/Gottlieb_DecisioNet_A_Binary-Tree_Structured_Neural_Network_ACCV_2022_paper.pdf), by Noam Gottlieb and Michael Werman.
+# HyperDecisioNet
+This code uses hyper network and ensemble learning to improve a classification network this code based on the official code of ["DecisioNet: A Binary-Tree Structured Neural Network"] by Noam Gottlieb and Michael Werman.
 
 ## Prerequisites
 - Python 3.7+
@@ -72,15 +72,11 @@ If you encounter any running issues, feel free to open an issue. We'll try to lo
 ## Citation
 If you find this code useful, please cite our paper:
 ```
-@InProceedings{Gottlieb_2022_ACCV,
-    author    = {Gottlieb, Noam and Werman, Michael},
-    title     = {DecisioNet: A Binary-Tree Structured Neural Network},
-    booktitle = {Proceedings of the Asian Conference on Computer Vision (ACCV)},
-    month     = {December},
-    year      = {2022},
-    pages     = {1675-1690}
+@InProceedings{
+    author    = 
+    title     = 
+    booktitle = 
+    month     = 
+    year      = 
+    pages     = 
 }
-
-```
-## Acknowledgements
-We would like to give a credit to the [pytorch-cifar](https://github.com/kuangliu/pytorch-cifar) repository, which was the origin of this repository. There's not much left of the original repo (you can find some remnants here and there), but it was the very first base that we began working with. 

@@ -85,6 +85,30 @@ class DecisioNet(nn.Module):
         return x, sigma
 
 
+class NetworkInNetworkDecisioNet(nn.Module):
+    def __init__(self, cfg_name='10_baseline', dropout=True,
+                 classes_division: Optional[Node] = None, decisionet_cls=None,
+                 num_in_channels=3):
+        super().__init__()
+        if decisionet_cls is None:
+            decisionet_cls = DecisioNet
+        config = NIN_CFG[cfg_name]
+        if not dropout:
+            config = [x for x in config if x != 'D']
+        # config[-1][-1] = (num_classes, 1)
+        print("NetworkInNetworkDecisioNet init - Using the following config:")
+        print(config)
+        self.decisionet = decisionet_cls(config, num_in_channels, NetworkInNetwork.make_layers_by_config,
+                                         classes_division)
+        self.classifier = nn.AdaptiveAvgPool2d((1, 1))
+
+    def forward(self, x, **kwargs):
+        features_out, sigmas = self.decisionet(x, **kwargs)
+        out = self.classifier(features_out)
+        out = torch.flatten(out, 1)
+        return out, sigmas
+
+
 class WideResNetDecisioNetNode(nn.Module):
 
     def __init__(self,
@@ -240,30 +264,6 @@ class WideResNetDecisioNetMeasurement(WideResNetDecisioNet):
         in_planes = 16
         self.conv1 = nn.Conv2d(num_in_channels, in_planes, kernel_size=3, stride=1, padding=1, bias=False)
         self.decisionet = WideResNetDecisioNetNodeMeasurement(stage_sizes, num_blocks, in_planes, num_classes)
-
-
-class NetworkInNetworkDecisioNet(nn.Module):
-    def __init__(self, cfg_name='10_baseline', dropout=True,
-                 classes_division: Optional[Node] = None, decisionet_cls=None,
-                 num_in_channels=3):
-        super().__init__()
-        if decisionet_cls is None:
-            decisionet_cls = DecisioNet
-        config = NIN_CFG[cfg_name]
-        if not dropout:
-            config = [x for x in config if x != 'D']
-        # config[-1][-1] = (num_classes, 1)
-        print("NetworkInNetworkDecisioNet init - Using the following config:")
-        print(config)
-        self.decisionet = decisionet_cls(config, num_in_channels, NetworkInNetwork.make_layers_by_config,
-                                         classes_division)
-        self.classifier = nn.AdaptiveAvgPool2d((1, 1))
-
-    def forward(self, x, **kwargs):
-        features_out, sigmas = self.decisionet(x, **kwargs)
-        out = self.classifier(features_out)
-        out = torch.flatten(out, 1)
-        return out, sigmas
 
 
 if __name__ == '__main__':

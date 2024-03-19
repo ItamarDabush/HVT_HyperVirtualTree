@@ -8,8 +8,7 @@ from torchvision.models import vgg11, resnet18
 from data.transforms import BasicTransforms, ImageNetTransforms
 from models.network_in_network import NetworkInNetwork
 from models.wide_resnet import wide_resnet28_10
-from models.basic_classifier import BasicClassifier, HyperBasicClassifier, EnsembleBasicClassifier, \
-    HyperClsBasicClassifier
+from models.basic_classifier import BasicClassifier, HyperBasicClassifier, EnsembleBasicClassifier
 from trainers.basic_trainer import BasicTrainer
 from utils.constants import INPUT_SIZE
 from utils.early_stopping import EarlyStopping

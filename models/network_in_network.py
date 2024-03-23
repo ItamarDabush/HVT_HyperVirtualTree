@@ -15,21 +15,55 @@ class NetworkInNetwork(nn.Module):
             config = self.CONFIG
         if not dropout:
             config = [x for x in config if x != 'D']
-        config[-1] = (num_classes, 1)
+        # config[-1] = (num_classes, 1)
         if verbose:
             print("NetworkInNetwork init - Using the following config:")
             print(config)
         self.features, _ = self.make_layers_by_config(config, num_in_channels=num_in_channels)
-        self.classifier = nn.AdaptiveAvgPool2d((1, 1))
+        # self.classifier = nn.AdaptiveAvgPool2d((1, 1))
 
     def forward(self, x):
         x = self.features(x)
-        x = self.classifier(x)
-        x = torch.flatten(x, 1)
+        # x = self.classifier(x)
+        # x = torch.flatten(x, 1)
         return x
 
     @staticmethod
     def make_layers_by_config(cfg, num_in_channels=3):
+        layers = []
+        in_channels = num_in_channels
+        for x in cfg:
+            if x[0] == 'M':
+                layers += [nn.MaxPool2d(kernel_size=x[1], stride=x[2], padding=x[3])]
+            elif x == 'A':
+                layers += [nn.AvgPool2d(kernel_size=3, stride=2, padding=1)]
+            elif x == 'D':
+                layers += [nn.Dropout(0.5)]
+            elif x == 'GAP':
+                layers += [nn.AdaptiveAvgPool2d((1, 1))]
+            elif x == 'GMP':
+                layers += [nn.AdaptiveMaxPool2d((1, 1))]
+            elif x[0] == 'V':
+                _, out_channels = x
+                layers += [nn.Flatten(start_dim=1)]
+                in_channels = out_channels
+            elif x[0] == 'fc':
+                _, out_channels, relu = x
+                layers += [nn.Linear(in_channels, out_channels)]
+                if relu:
+                    layers += [nn.ReLU()]
+                in_channels = out_channels
+            else:
+                out_channels, kernel_size, stride, padding = x
+                # padding = kernel_size // 2
+                layers += [nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=padding),
+                           nn.ReLU(inplace=True)]
+                in_channels = out_channels
+        return nn.Sequential(*layers), in_channels
+
+
+    @staticmethod
+    def old_make_layers_by_config(cfg, num_in_channels=3):
         layers = []
         in_channels = num_in_channels
         for x in cfg:

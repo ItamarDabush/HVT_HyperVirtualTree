@@ -13,6 +13,7 @@ from trainers.basic_trainer import BasicTrainer
 from utils.constants import INPUT_SIZE
 from utils.early_stopping import EarlyStopping
 
+
 class NetworkInNetworkTrainer(BasicTrainer):
 
     def init_early_stopping(self):
@@ -23,7 +24,10 @@ class NetworkInNetworkTrainer(BasicTrainer):
 
     def _init_model(self):
         num_in_channels = INPUT_SIZE[self.dataset_name][0]
-        model = NetworkInNetwork(num_classes=self.num_classes, num_in_channels=num_in_channels)
+        model = NetworkInNetwork(num_classes=self.num_classes, num_in_channels=num_in_channels,
+                                 config=[(16, 3, 1, 1), ('M', 2, None, 0), (32, 3, 1, 1), ('M', 2, None, 0),
+                                         ('V', int(32 * ((INPUT_SIZE[self.dataset_name][1]) / 4) ** 2)),
+                                         ('fc', 128, True), ('fc', 10, False)])
         for m in model.modules():
             if isinstance(m, nn.Conv2d):
                 m.weight.data.normal_(0, 0.05)
@@ -95,38 +99,14 @@ class BasicClassifierTrainer(BasicTrainer):
 
     def _init_model(self):
         set_random_seed(0)
-        if self.config["network_type"] == "hyper-ensemble-stacking":
-            model = HyperBasicClassifier(num_branches=self.num_classes, out_size=self.num_classes,
-                                         scale_factor=self.scale_factor, parallel=self.parallel,
-                                         dataset_name=self.dataset_name, meta_learn=False, device=self.device)
-        elif self.config["network_type"] == "hyper-ensemble-voting":
-            model = HyperBasicClassifier(num_branches=self.num_classes, out_size=self.num_classes,
-                                         scale_factor=self.scale_factor, parallel=self.parallel,
-                                         dataset_name=self.dataset_name, device=self.device)
-        elif self.config["network_type"] == "ensemble-voting":
-            model = EnsembleBasicClassifier(num_classes=self.num_classes, image_size=self.image_size,
-                                            num_classifiers=self.num_classes)
-        elif self.config["network_type"] == "hyper":
-            model = HyperBasicClassifier(num_branches=1, out_size=self.num_classes, scale_factor=self.scale_factor,
-                                         parallel=self.parallel, dataset_name=self.dataset_name, device=self.device)
-        elif self.config["network_type"] == "hyper-cls":
-            model = HyperBasicClassifier(num_branches=self.num_classes, out_size=1, scale_factor=self.scale_factor,
-                                         parallel=self.parallel, dataset_name=self.dataset_name, device=self.device)
-        elif self.config["network_type"] == "hyper-cls-new":        #  gets many sub-batches
-            model = HyperClsBasicClassifier(num_branches=self.num_classes, out_size=1, scale_factor=self.scale_factor,
-                                         parallel=self.parallel, dataset_name=self.dataset_name, device=self.device)
-        elif self.config["network_type"] == "hyper-cls-new1":       # same like hyper cls with non binary output
-            model = HyperBasicClassifier(num_branches=self.num_classes, out_size=2, scale_factor=self.scale_factor,
-                                         parallel=self.parallel, dataset_name=self.dataset_name, device=self.device)
-        else:
-            model = BasicClassifier(num_classes=self.num_classes, image_size=self.image_size)
+        model = BasicClassifier(num_classes=self.num_classes, image_size=self.image_size)
         model.apply(functools.partial(weights_init_kaiming, scale=0.1))
         return model
 
 
 if __name__ == '__main__':
-    # trainer = NetworkInNetworkTrainer()
-    trainer = BasicClassifierTrainer()
+    trainer = NetworkInNetworkTrainer()
+    # trainer = BasicClassifierTrainer()
     # trainer = WideResNetTrainer()
     trainer.train_model()
     # trainer.evaluate()

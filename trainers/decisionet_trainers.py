@@ -183,7 +183,10 @@ class NetworkInNetworkDecisioNetTrainer(DecisioNetTrainer):
 
     def _init_model(self):
         num_in_channels = INPUT_SIZE[self.dataset_name][0]
-        model = NetworkInNetworkDecisioNet(cfg_name=self.nin_cfg_name, num_in_channels=num_in_channels)
+        model = NetworkInNetworkDecisioNet(cfg_name=self.nin_cfg_name, config=[((16, 3, 1, 1), ('M', 2, None, 0)),
+                                        ((16, 3, 1, 1), ('M', 2, None, 0), ('V', int(16 * ((INPUT_SIZE[self.dataset_name][1]) / 4) ** 2)),
+                                         ('fc', 64, True), ('fc', 10, False))], num_in_channels=num_in_channels)
+        # model = NetworkInNetworkDecisioNet(cfg_name=self.nin_cfg_name, num_in_channels=num_in_channels)
         return model
 
     def init_parser(self):

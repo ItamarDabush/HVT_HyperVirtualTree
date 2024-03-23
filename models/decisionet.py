@@ -7,6 +7,7 @@ from custom_layers.selection_layers import BinarySelectionLayer
 from models.network_in_network import NetworkInNetwork
 from models.wide_resnet import WideResNet
 from utils.binary_tree import Node
+from utils.constants import INPUT_SIZE
 
 ConfigTuple = Tuple[Union[int, str, Tuple[int, int]], ...]
 ConfigList = List[Any]
@@ -14,7 +15,10 @@ ConfigList = List[Any]
 WRESNET_STAGE_SIZES = {'100_baseline': [[(16, 1)], [(16, 2)], [(16, 2)]],
                        '100_baseline_single_early': [[(16, 1)], [(16, 2), (32, 2)]],
                        '100_baseline_single_late': [[(16, 1), (32, 2)], [(32, 2)]]}
-NIN_CFG = {'10_baseline': [((192, 5), (160, 1), (96, 1), 'M', 'D'),
+NIN_CFG = {'basic':[((16, 3, 1, 1), ('M', 2, None, 0)),
+                            ((16, 3, 1, 1), ('M', 2, None, 0), ('V', int(16 * (8 ** 2))),
+                            ('fc', 64, True), ('fc', 10, False))],
+            '10_baseline': [((192, 5), (160, 1), (96, 1), 'M', 'D'),
                            ((96, 5), (96, 1), (96, 1), 'A', 'D'),
                            ((48, 3), (48, 1), (10, 1))],
            '10_baseline_slim': [((192, 5), (160, 1)),
@@ -86,13 +90,14 @@ class DecisioNet(nn.Module):
 
 
 class NetworkInNetworkDecisioNet(nn.Module):
-    def __init__(self, cfg_name='10_baseline', dropout=True,
+    def __init__(self, cfg_name='10_baseline', dropout=True, config=None,
                  classes_division: Optional[Node] = None, decisionet_cls=None,
                  num_in_channels=3):
         super().__init__()
+        if config is None:
+            config = NIN_CFG[cfg_name]
         if decisionet_cls is None:
             decisionet_cls = DecisioNet
-        config = NIN_CFG[cfg_name]
         if not dropout:
             config = [x for x in config if x != 'D']
         # config[-1][-1] = (num_classes, 1)
@@ -104,9 +109,9 @@ class NetworkInNetworkDecisioNet(nn.Module):
 
     def forward(self, x, **kwargs):
         features_out, sigmas = self.decisionet(x, **kwargs)
-        out = self.classifier(features_out)
-        out = torch.flatten(out, 1)
-        return out, sigmas
+        # out = self.classifier(features_out)
+        # out = torch.flatten(out, 1)
+        return features_out, sigmas
 
 
 class WideResNetDecisioNetNode(nn.Module):

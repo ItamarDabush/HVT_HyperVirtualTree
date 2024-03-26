@@ -5,7 +5,7 @@ import time
 
 import torch.nn as nn
 import torch.optim.lr_scheduler
-from utils.constants import NUM_CLASSES
+from utils.constants import NUM_CLASSES, BRANCH_4_TO_CLASS, BRANCH_10_TO_CLASS
 from utils.metrics_tracker import MetricsTracker, BinaryMetricsTracker
 
 from models.basic_classifier import BasicClassifier, HyperBasicClassifier, EnsembleBasicClassifier
@@ -21,7 +21,8 @@ class BasicClassifierTrainer(BasicTrainer):
             self.cls_criterion = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([9], device=self.device))
             self.model_cls_criterion = nn.CrossEntropyLoss()
         elif self.config["network_type"] in ["hyper-ensemble-voting", "hyper-ensemble-stacking"]:
-            self.cls_criterion = [nn.CrossEntropyLoss(weight=torch.tensor([2.0 if i in [j-2, j-1, j, j+1, j+2] else 1.0 for i in range(len(NUM_CLASSES) + 1)], device=self.device)) for j in range(len(NUM_CLASSES) + 1)]
+            self.cls_criterion = [nn.CrossEntropyLoss(weight=torch.tensor([2.0 if i in BRANCH_4_TO_CLASS[j] else 1.0 for i in range(self.num_classes)],device=self.device)) for j in range(self.model.num_branches)]
+            # self.cls_criterion = [nn.CrossEntropyLoss(weight=torch.tensor([2.0 if i in BRANCH_10_TO_CLASS[j] else 1.0 for i in range(self.num_classes)], device=self.device)) for j in range(self.model.num_branches)]
             self.special_cls_criterion = nn.CrossEntropyLoss()
             if self.config["network_type"] == "hyper-ensemble-stacking":
                 self.special_cls_criterion = nn.CrossEntropyLoss()
@@ -47,7 +48,7 @@ class BasicClassifierTrainer(BasicTrainer):
                                          scale_factor=self.scale_factor, parallel=self.parallel,
                                          dataset_name=self.dataset_name, meta_learn=False, device=self.device)
         elif self.config["network_type"] == "hyper-ensemble-voting":
-            model = HyperBasicClassifier(num_branches=self.num_classes, out_size=self.num_classes,
+            model = HyperBasicClassifier(num_branches=4, out_size=self.num_classes,
                                          scale_factor=self.scale_factor, parallel=self.parallel,
                                          dataset_name=self.dataset_name, device=self.device)
         elif self.config["network_type"] == "ensemble-voting":
@@ -121,7 +122,7 @@ class BasicClassifierTrainer(BasicTrainer):
         for i, out, metrics_t in zip(range(len(outputs)), outputs, self.branch_metrics_tracker):
             predicted_classes = torch.argmax(out, dim=1)
             for j, class_idx in enumerate(predicted_classes):
-                if class_idx in [i - 2, i - 1, i, i + 1, i + 2]:
+                if class_idx in BRANCH_4_TO_CLASS[i]:
                     batch_votes[j, class_idx] += (2 / len(outputs))
                 else:
                     batch_votes[j, class_idx] += (1 / len(outputs))
@@ -171,7 +172,7 @@ class BasicClassifierTrainer(BasicTrainer):
         data_loader = getattr(self.data_loaders, f'{train_test_val}_loader')
         num_batches = len(data_loader)
         self.metrics_tracker.reset(num_batches)
-        if self.config["network_type"] in ["hyper-ensemble-voting", "hyper-ensemble-stacking", "hyper-cls"]:
+        if self.config["network_type"] in ["hyper-ensemble-voting", "hyper-ensemble-stacking", "hyper-cls", "hyper-ensemble4-voting"]:
             [tracker.reset(num_batches) for tracker in self.branch_metrics_tracker]
         with torch.set_grad_enabled(training):
             start_time = time.time()

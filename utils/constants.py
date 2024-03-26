@@ -10,6 +10,22 @@ def classes_to_idx(classes_list: collections.Iterable):
     return {cls: idx for idx, cls in enumerate(classes_list)}
 
 
+BRANCH_10_TO_CLASS = {0: [0, 1, 2],
+                   1: [0, 1, 2, 3],
+                   2: [0, 1, 2, 3, 4],
+                   3: [1, 2, 3, 4, 5],
+                   4: [2, 3, 4, 5, 6],
+                   5: [3, 4, 5, 6, 7],
+                   6: [4, 5, 6, 7, 8],
+                   7: [5, 6, 7, 8, 9],
+                   8: [6, 7, 8, 9],
+                   9: [7, 8, 9]}
+
+BRANCH_4_TO_CLASS = {0: [0, 8],
+                   1: [1, 9],
+                   2: [2, 3, 4, 5, 6],
+                   3: [7]}
+
 DATASET_NAMES = ['CIFAR10', 'CIFAR100', 'ImageNet', 'TinyImageNet', 'FashionMNIST', 'SVHN', 'Food101', 'MNIST']
 
 INPUT_SIZE = {'CIFAR10': (3, 32, 32),

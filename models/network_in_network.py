@@ -61,29 +61,71 @@ class NetworkInNetwork(nn.Module):
                 in_channels = out_channels
         return nn.Sequential(*layers), in_channels
 
-
     @staticmethod
-    def old_make_layers_by_config(cfg, num_in_channels=3):
+    def make_hyper_layers_by_config(cfg, num_in_channels=3, size_in=32):
         layers = []
-        in_channels = num_in_channels
+        next_in_channels = num_in_channels
+        next_size_in = size_in
+        hyper_input_channels = 1
+        relu = False
         for x in cfg:
-            if x == 'M':
-                layers += [nn.MaxPool2d(kernel_size=3, stride=2, padding=1)]
+            if x[0] == 'M':
+                layers += [nn.MaxPool2d(kernel_size=x[1], stride=x[2], padding=x[3])]
+                next_size_in = int(size_in/x[1])
             elif x == 'A':
-                layers += [nn.AvgPool2d(kernel_size=3, stride=2, padding=1)]
+                layers += [nn.AvgPool2d(kernel_size=x[1], stride=x[2], padding=x[3])]
+                next_size_in = int(size_in / x[1])
             elif x == 'D':
                 layers += [nn.Dropout(0.5)]
             elif x == 'GAP':
                 layers += [nn.AdaptiveAvgPool2d((1, 1))]
+                next_size_in = 1
+                next_in_channels = 0
             elif x == 'GMP':
                 layers += [nn.AdaptiveMaxPool2d((1, 1))]
-            else:
-                out_channels, kernel_size = x
-                padding = kernel_size // 2
-                layers += [nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size, padding=padding),
-                           nn.ReLU(inplace=True)]
-                in_channels = out_channels
-        return nn.Sequential(*layers), in_channels
+                next_size_in = 1
+                next_in_channels = 0
+            elif x[0] == 'V':
+                layers += [nn.Flatten(start_dim=1)]
+                next_size_in = next_in_channels * next_size_in * next_size_in
+                next_in_channels = 0
+            elif x[0] == 'fc':
+                _, in_channels, out_channels, _ = x
+                layers += [nn.Linear(hyper_input_channels, out_channels * next_size_in + out_channels )]
+                next_size_in = out_channels
+                if relu:
+                    layers += [nn.ReLU()]
+            elif x[0] == 'conv2d':
+                _, in_channels, out_channels, kernel_size, size_in = x
+                # padding = kernel_size // 2
+                layers += [nn.Linear(hyper_input_channels, out_channels * in_channels * kernel_size * kernel_size + out_channels)]
+                if relu:
+                    layers += [nn.ReLU()]
+                next_in_channels = out_channels
+        return nn.Sequential(*layers), next_in_channels, next_size_in
+
+    # @staticmethod
+    # def old_make_layers_by_config(cfg, num_in_channels=3):
+    #     layers = []
+    #     in_channels = num_in_channels
+    #     for x in cfg:
+    #         if x == 'M':
+    #             layers += [nn.MaxPool2d(kernel_size=3, stride=2, padding=1)]
+    #         elif x == 'A':
+    #             layers += [nn.AvgPool2d(kernel_size=3, stride=2, padding=1)]
+    #         elif x == 'D':
+    #             layers += [nn.Dropout(0.5)]
+    #         elif x == 'GAP':
+    #             layers += [nn.AdaptiveAvgPool2d((1, 1))]
+    #         elif x == 'GMP':
+    #             layers += [nn.AdaptiveMaxPool2d((1, 1))]
+    #         else:
+    #             out_channels, kernel_size = x
+    #             padding = kernel_size // 2
+    #             layers += [nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size, padding=padding),
+    #                        nn.ReLU(inplace=True)]
+    #             in_channels = out_channels
+    #     return nn.Sequential(*layers), in_channels
 
 
 if __name__ == '__main__':

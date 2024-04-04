@@ -15,10 +15,13 @@ ConfigList = List[Any]
 WRESNET_STAGE_SIZES = {'100_baseline': [[(16, 1)], [(16, 2)], [(16, 2)]],
                        '100_baseline_single_early': [[(16, 1)], [(16, 2), (32, 2)]],
                        '100_baseline_single_late': [[(16, 1), (32, 2)], [(32, 2)]]}
-NIN_CFG = {'basic':[((16, 3, 1, 1), ('M', 2, None, 0)),
-                            ((16, 3, 1, 1), ('M', 2, None, 0), ('V', int(16 * (8 ** 2))),
-                            ('fc', 64, True), ('fc', 10, False))],
-            '10_baseline': [((192, 5), (160, 1), (96, 1), 'M', 'D'),
+NIN_CFG = {'cifar10_2_basic': [((16, 3, 1, 1), ('M', 2, None, 0)),
+                               ((16, 3, 1, 1), ('M', 2, None, 0), ('V', int(16 * (8 ** 2))),
+                                ('fc', 64, True))],
+           'cifar10_4_basic': [((16, 3, 1, 1), ('M', 2, None, 0)),
+                               ((16, 3, 1, 1), ('M', 2, None, 0)),
+                               (('V', int(16 * (8 ** 2))), ('fc', 32, True))],
+           '10_baseline': [((192, 5), (160, 1), (96, 1), 'M', 'D'),
                            ((96, 5), (96, 1), (96, 1), 'A', 'D'),
                            ((48, 3), (48, 1), (10, 1))],
            '10_baseline_slim': [((192, 5), (160, 1)),
@@ -105,13 +108,16 @@ class NetworkInNetworkDecisioNet(nn.Module):
         print(config)
         self.decisionet = decisionet_cls(config, num_in_channels, NetworkInNetwork.make_layers_by_config,
                                          classes_division)
-        self.classifier = nn.AdaptiveAvgPool2d((1, 1))
+        if 'basic' in cfg_name:
+            self.classifier = nn.Linear(config[-1][-1][-2], 10)
+        else:
+            self.classifier = nn.AdaptiveAvgPool2d((1, 1))
 
     def forward(self, x, **kwargs):
         features_out, sigmas = self.decisionet(x, **kwargs)
-        # out = self.classifier(features_out)
+        out = self.classifier(features_out)
         # out = torch.flatten(out, 1)
-        return features_out, sigmas
+        return out, sigmas
 
 
 class WideResNetDecisioNetNode(nn.Module):

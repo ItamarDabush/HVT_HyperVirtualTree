@@ -7,13 +7,13 @@ from matplotlib import pyplot as plt
 
 # from custom_layers.losses import WeightedMSELoss
 from data.datasets import FilteredRelabeledDatasets
-from models.decisionet import NetworkInNetworkDecisioNet, NIN_CFG, WideResNetDecisioNet, WRESNET_STAGE_SIZES
+from models.hyper_decisionet import NetworkInNetworkHyperDecisioNet, NIN_CFG
 from trainers.basic_trainer import BasicTrainer
 from utils.constants import LABELS_MAP, CLASSES_NAMES, INPUT_SIZE, NUM_CLASSES
 from utils.metrics_tracker import SigmaLossMetricsTracker
 
 
-class DecisioNetTrainer(BasicTrainer):
+class HyperDecisioNetTrainer(BasicTrainer):
 
     def __init__(self):
         super().__init__()
@@ -179,11 +179,11 @@ class DecisioNetTrainer(BasicTrainer):
         return sigma_weights
 
 
-class NetworkInNetworkDecisioNetTrainer(DecisioNetTrainer):
+class NetworkInNetworkHyperDecisioNetTrainer(HyperDecisioNetTrainer):
 
     def _init_model(self):
         num_in_channels = INPUT_SIZE[self.dataset_name][0]
-        model = NetworkInNetworkDecisioNet(cfg_name=self.nin_cfg_name, num_in_channels=num_in_channels)
+        model = NetworkInNetworkHyperDecisioNet(cfg_name=self.nin_cfg_name, num_in_channels=num_in_channels)
         return model
 
     def init_parser(self):
@@ -206,56 +206,9 @@ class NetworkInNetworkDecisioNetTrainer(DecisioNetTrainer):
                                          dataset_name=self.dataset_name)
 
 
-class WideResNetDecisioNetTrainer(DecisioNetTrainer):
-
-    def init_transforms(self, padding_mode='constant'):
-        return super().init_transforms(padding_mode='reflect')
-
-    def init_lr_scheduler(self):
-        return torch.optim.lr_scheduler.MultiStepLR(self.optimizer, [60, 120, 160], gamma=0.2, verbose=True)
-
-    def lr_scheduler_step(self, epoch=-1, train_acc=None, train_loss=None, test_acc=None, test_loss=None):
-        self.lr_scheduler.step()
-
-    def init_optimizer(self):
-        optimizer = torch.optim.SGD(self.model.parameters(), lr=self.learning_rate,
-                                    momentum=0.9, weight_decay=5e-4, nesterov=True)
-        return optimizer
-
-    def _init_model(self):
-        num_in_channels = INPUT_SIZE[self.dataset_name][0]
-        num_classes = NUM_CLASSES[self.dataset_name]
-        model = WideResNetDecisioNet(num_in_channels=num_in_channels, num_classes=num_classes, cfg_name=self.wrn_cfg_name)
-        for m in model.modules():
-            if isinstance(m, nn.Conv2d):
-                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
-            elif isinstance(m, (nn.BatchNorm2d, nn.GroupNorm)):
-                nn.init.constant_(m.weight, 1)
-                nn.init.constant_(m.bias, 0)
-        return model
-
-    def init_parser(self):
-        parser = super().init_parser()
-        parser.add_argument('--wrn_cfg_name', type=str, default='100_baseline', help='Name of the Wide-ResNet config')
-        return parser
-
-    def _init_config_attributes(self):
-        super()._init_config_attributes()
-        self.wrn_cfg_name = self.config['wrn_cfg_name']
-
-    def init_data_sets(self):
-        labels_map = dict(LABELS_MAP[f'{self.dataset_name}_WRN'])
-        num_levels_in_tree = len(WRESNET_STAGE_SIZES[self.wrn_cfg_name])
-        for k, v in labels_map.items():
-            labels_map[k] = v[:num_levels_in_tree]
-        return FilteredRelabeledDatasets(self.transforms, use_validation=self.use_validation,
-                                         classes_indices=self.classes_indices,
-                                         labels_map=labels_map,
-                                         dataset_name=self.dataset_name)
-
 
 if __name__ == '__main__':
-    trainer = NetworkInNetworkDecisioNetTrainer()
+    trainer = NetworkInNetworkHyperDecisioNetTrainer()
     # trainer = WideResNetDecisioNetTrainer()
     trainer.train_model()
     # trainer.evaluate()

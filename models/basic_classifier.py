@@ -111,12 +111,12 @@ class MetaBlock(nn.Module):
 class MetaLearner(nn.Module):
     def __init__(self, input_dim, num_classes):
         super(MetaLearner, self).__init__()
-        self.fc1 = nn.Linear(input_dim, 128)
-        self.fc2 = nn.Linear(128, num_classes)
+        self.fc1 = nn.Linear(input_dim, 10)
+        # self.fc2 = nn.Linear(64, num_classes)
 
     def forward(self, x):
-        x = torch.relu(self.fc1(x))
-        x = self.fc2(x)
+        x = self.fc1(F.relu(x))
+        # x = self.fc2(x)
         return x
 
 class HyperBasicClassifier(nn.Module):
@@ -151,6 +151,37 @@ class HyperBasicClassifier(nn.Module):
             out = self.meta_learner(stacked_out)
         return out
 
+class HyperNiNClassifier(nn.Module):
+
+    def __init__(self, dataset_name, num_branches=1, meta_block_num=1, out_size=2, scale_factor=128, parallel=False,
+                 meta_learn=False, device=torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')):
+        super(HyperBasicClassifier, self).__init__()
+
+        self.meta_block_num = meta_block_num
+        self.parallel = parallel
+        self.out_size = out_size
+        self.dataset_name = dataset_name
+        self.num_branches = num_branches
+        self.meta_learn = meta_learn
+        self.device = device
+
+        if self.meta_learn:
+            self.meta_learner = MetaLearner(input_dim=self.num_branches * self.out_size, num_classes=self.out_size)
+
+        # self.meta_block = []
+        # for idx in range(self.meta_block_num):
+        #     self.meta_block.append(
+        #         MetaBlock(self.ker_size, self.filters, self.width, self.out_size, self.parallel))
+        # self.meta_block = nn.Sequential(*self.meta_block)
+        self.meta_block = MetaBlock(self.dataset_name, self.num_branches, self.out_size, scale_factor, self.parallel,
+                                    device=self.device)
+
+    def forward(self, x):
+        out = self.meta_block(x)
+        if self.meta_learn:
+            stacked_out = torch.cat(out, dim=1)
+            out = self.meta_learner(stacked_out)
+        return out
 
 class EnsembleBasicClassifier(nn.Module):
 

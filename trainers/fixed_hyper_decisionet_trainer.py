@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 
 # from custom_layers.losses import WeightedMSELoss
 from data.datasets import FilteredRelabeledDatasets
-from models.hyper_decisionet import NetworkInNetworkHyperDecisioNet, NIN_CFG
+from models.fixed_hyper_decisionet import FixedNetworkInNetworkHyperDecisioNet
 from trainers.basic_trainer import BasicTrainer
 from utils.constants import LABELS_MAP, CLASSES_NAMES, INPUT_SIZE, NUM_CLASSES
 from utils.metrics_tracker import SigmaLossMetricsTracker
@@ -15,7 +15,7 @@ from utils.common_tools import set_random_seed, weights_init_kaiming
 import torch.nn.init as init
 
 
-class HyperDecisioNetTrainer(BasicTrainer):
+class FixedHyperDecisioNetTrainer(BasicTrainer):
 
     def __init__(self):
         super().__init__()
@@ -183,27 +183,25 @@ class HyperDecisioNetTrainer(BasicTrainer):
         return sigma_weights
 
 
-class NetworkInNetworkHyperDecisioNetTrainer(HyperDecisioNetTrainer):
+class FixedNetworkInNetworkHyperDecisioNetTrainer(FixedHyperDecisioNetTrainer):
 
     def _init_model(self):
         set_random_seed(0)
-        model = NetworkInNetworkHyperDecisioNet(cfg_name=self.nin_cfg_name, num_in_channels=self.num_in_channels)
+        model = FixedNetworkInNetworkHyperDecisioNet(hyper=False, multi_hyper=False)
         model.apply(functools.partial(weights_init_kaiming, scale=0.1))
         # model.apply(self.weights_init_xavier)
         return model
 
     def init_parser(self):
         parser = super().init_parser()
-        parser.add_argument('--nin_cfg_name', type=str, default='10_baseline', help='Name of the NiN config')
         return parser
 
     def _init_config_attributes(self):
         super()._init_config_attributes()
-        self.nin_cfg_name = self.config['nin_cfg_name']
 
     def init_data_sets(self):
         labels_map = dict(LABELS_MAP[self.dataset_name])
-        num_blocks = len(NIN_CFG[self.nin_cfg_name])
+        num_blocks = 2
         for k, v in labels_map.items():
             labels_map[k] = v[:num_blocks]
         return FilteredRelabeledDatasets(self.transforms, use_validation=self.use_validation,
@@ -219,7 +217,7 @@ class NetworkInNetworkHyperDecisioNetTrainer(HyperDecisioNetTrainer):
                 init.constant_(m.bias, 0.0)
 
 if __name__ == '__main__':
-    trainer = NetworkInNetworkHyperDecisioNetTrainer()
+    trainer = FixedNetworkInNetworkHyperDecisioNetTrainer()
     # trainer = WideResNetDecisioNetTrainer()
     trainer.train_model()
     # trainer.evaluate()

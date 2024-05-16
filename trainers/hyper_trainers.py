@@ -51,6 +51,10 @@ class BasicClassifierTrainer(BasicTrainer):
             model = HyperBasicClassifier(num_branches=4, out_size=self.num_classes,
                                          scale_factor=self.scale_factor, parallel=self.parallel,
                                          dataset_name=self.dataset_name, device=self.device)
+        elif self.config["network_type"] == "hyper-ensemble-meta":
+            model = HyperBasicClassifier(num_branches=4, out_size=self.num_classes,
+                                         scale_factor=self.scale_factor, parallel=self.parallel,
+                                         meta_learn=True, dataset_name=self.dataset_name, device=self.device)
         elif self.config["network_type"] == "ensemble-voting":
             model = EnsembleBasicClassifier(num_classes=self.num_classes, image_size=self.image_size,
                                             num_classifiers=self.num_classes)
@@ -241,6 +245,8 @@ class BasicClassifierTrainer(BasicTrainer):
             _, loss = self._feed_forward(inputs, targets)
         if training:
             loss.backward()
+            # for name, param in self.model.named_parameters():
+            #     print(f'Parameter: {name}, Gradient norm: {param.grad.norm()}')
             self.optimizer.step()
 
 

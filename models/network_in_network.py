@@ -3,7 +3,7 @@ import torch.nn as nn
 
 from utils.constants import INPUT_SIZE, NUM_CLASSES
 
-
+BATCH_SIZE = 100
 class NetworkInNetwork(nn.Module):
     CONFIG = [(192, 5), (160, 1), (96, 1), 'M', 'D',
               (192, 5), (192, 1), (192, 1), 'A', 'D',
@@ -99,6 +99,14 @@ class NetworkInNetwork(nn.Module):
                 _, in_channels, out_channels, kernel_size, size_in = x
                 # padding = kernel_size // 2
                 layers += [nn.Linear(hyper_input_channels, out_channels * in_channels * kernel_size * kernel_size + out_channels)]
+                if relu:
+                    layers += [nn.ReLU()]
+                next_in_channels = out_channels
+            elif x[0] == 'conv2d_2':
+                _, in_channels, out_channels, kernel_size, size_in = x
+                # padding = kernel_size // 2
+                layers += [nn.Linear(hyper_input_channels,
+                                     out_channels * in_channels * kernel_size * kernel_size + out_channels)]
                 if relu:
                     layers += [nn.ReLU()]
                 next_in_channels = out_channels

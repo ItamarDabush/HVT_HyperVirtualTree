@@ -59,7 +59,7 @@ class BasicTrainer:
         if self.num_gpus > 1:
             self.parallel = True
         self.image_size = INPUT_SIZE[self.dataset_name]
-        self.num_in_channels = INPUT_SIZE[self.dataset_name][0]
+        self.num_in_channels = self.image_size[0]
         self.num_classes = NUM_CLASSES[self.dataset_name]
         self.classes_indices = np.arange(self.num_classes)
         self._init_config_attributes()
@@ -412,6 +412,10 @@ class BasicTrainer:
         _, loss = self._feed_forward(inputs, targets)
         if training:
             loss.backward()
+            # for name, param in self.model.named_parameters():
+            #     if param.grad is not None:
+            #         print(name, param.grad[0])
+            #         break
             self.optimizer.step()
 
     def input_and_targets_to_device(self, inputs, targets):

@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 
 # from custom_layers.losses import WeightedMSELoss
 from data.datasets import FilteredRelabeledDatasets
-from models.fixed_hyper_decisionet import FixedNetworkInNetworkHyperDecisioNet
+from models.fixed_hyper_decisionet import FixedBasicHyperDecisioNet, FixedBasicHyperDecisioNet_1
 from trainers.basic_trainer import BasicTrainer
 from utils.constants import LABELS_MAP, CLASSES_NAMES, INPUT_SIZE, NUM_CLASSES
 from utils.metrics_tracker import SigmaLossMetricsTracker
@@ -186,9 +186,9 @@ class FixedHyperDecisioNetTrainer(BasicTrainer):
 class FixedNetworkInNetworkHyperDecisioNetTrainer(FixedHyperDecisioNetTrainer):
 
     def _init_model(self):
-        set_random_seed(0)
-        model = FixedNetworkInNetworkHyperDecisioNet(hyper=False, multi_hyper=False)
-        model.apply(functools.partial(weights_init_kaiming, scale=0.1))
+        # set_random_seed(0)
+        model = FixedBasicHyperDecisioNet(hyper=True, multi_hyper=True)
+        # model.apply(functools.partial(weights_init_kaiming, scale=0.1))
         # model.apply(self.weights_init_xavier)
         return model
 

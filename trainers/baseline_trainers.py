@@ -24,10 +24,12 @@ class NetworkInNetworkTrainer(BasicTrainer):
 
     def _init_model(self):
         num_in_channels = INPUT_SIZE[self.dataset_name][0]
+        # model = NetworkInNetwork(num_classes=self.num_classes, num_in_channels=num_in_channels,
+        #                          config=[(16, 3, 1, 1), ('M', 2, None, 0), (32, 3, 1, 1), ('M', 2, None, 0),
+        #                                  ('V', int(32 * ((INPUT_SIZE[self.dataset_name][1]) / 4) ** 2)),
+        #                                  ('fc', 128, True), ('fc', 10, False)])
         model = NetworkInNetwork(num_classes=self.num_classes, num_in_channels=num_in_channels,
-                                 config=[(16, 3, 1, 1), ('M', 2, None, 0), (32, 3, 1, 1), ('M', 2, None, 0),
-                                         ('V', int(32 * ((INPUT_SIZE[self.dataset_name][1]) / 4) ** 2)),
-                                         ('fc', 128, True), ('fc', 10, False)])
+                                 config=[(192, 5), (160, 1), (96, 1), 'M', 'D', (192, 5), (192, 1), (192, 1), 'A', 'D', (192, 3), (192, 1), (10, 1)])
         for m in model.modules():
             if isinstance(m, nn.Conv2d):
                 m.weight.data.normal_(0, 0.05)

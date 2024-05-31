@@ -3,6 +3,7 @@ import random
 import torch
 import torch.nn as nn
 import wandb
+import functools
 from matplotlib import pyplot as plt
 
 # from custom_layers.losses import WeightedMSELoss
@@ -11,6 +12,7 @@ from models.decisionet import NetworkInNetworkDecisioNet, NIN_CFG, WideResNetDec
 from trainers.basic_trainer import BasicTrainer
 from utils.constants import LABELS_MAP, CLASSES_NAMES, INPUT_SIZE, NUM_CLASSES
 from utils.metrics_tracker import SigmaLossMetricsTracker
+from utils.common_tools import set_random_seed, weights_init_kaiming
 
 
 class DecisioNetTrainer(BasicTrainer):
@@ -182,13 +184,15 @@ class DecisioNetTrainer(BasicTrainer):
 class NetworkInNetworkDecisioNetTrainer(DecisioNetTrainer):
 
     def _init_model(self):
+        # set_random_seed(0)
         num_in_channels = INPUT_SIZE[self.dataset_name][0]
         model = NetworkInNetworkDecisioNet(cfg_name=self.nin_cfg_name, num_in_channels=num_in_channels)
+        # model.apply(functools.partial(weights_init_kaiming, scale=0.1))
         return model
 
     def init_parser(self):
         parser = super().init_parser()
-        parser.add_argument('--nin_cfg_name', type=str, default='10_baseline', help='Name of the NiN config')
+        parser.add_argument('--nin_cfg_name', type=str, default='10_baseline_single_early', help='Name of the NiN config')
         return parser
 
     def _init_config_attributes(self):

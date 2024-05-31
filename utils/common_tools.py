@@ -214,26 +214,48 @@ def saveImage(output: np.ndarray, gt: np.ndarray, idx: int) -> np.ndarray:
     return canvas
 
 
+# def weights_init_kaiming(m, scale: float = 1):
+#     """
+#     Initializing the weights using the 'Kaiming' method
+#     @param m: The network layer
+#     @param scale: The sacale
+#     @return: None
+#     """
+#     classname = m.__class__.__name__
+#     if classname.find('Conv') != -1:
+#         init.kaiming_normal_(m.weight.data, a=0, mode='fan_in')
+#         m.weight.data *= scale
+#     elif classname.find('Linear') != -1:
+#         init.kaiming_normal_(m.weight.data, a=0, mode='fan_in')
+#         m.weight.data *= scale
+#         if m.bias is not None:
+#             m.bias.data.zero_()
+#     elif classname.find('BatchNorm2d') != -1 and classname.find('BatchNorm2dParallel') < 0:
+#         init.constant_(m.weight.data, 1.0)
+#         init.constant_(m.bias.data, 0.0)
+
 def weights_init_kaiming(m, scale: float = 1):
     """
-    Initializing the weights using the 'Kaiming' method
+    Initializes the weights using the 'Kaiming' method.
     @param m: The network layer
-    @param scale: The sacale
+    @param scale: The scale factor
     @return: None
     """
     classname = m.__class__.__name__
     if classname.find('Conv') != -1:
-        init.kaiming_normal_(m.weight.data, a=0, mode='fan_in')
+        init.kaiming_normal_(m.weight, a=0, mode='fan_in', nonlinearity='relu')
         m.weight.data *= scale
+        if hasattr(m, 'bias') and m.bias is not None:
+            init.constant_(m.bias, 0.0)
     elif classname.find('Linear') != -1:
-        init.kaiming_normal_(m.weight.data, a=0, mode='fan_in')
+        init.kaiming_normal_(m.weight, a=0, mode='fan_in', nonlinearity='relu')
         m.weight.data *= scale
-        if m.bias is not None:
-            m.bias.data.zero_()
-    elif classname.find('BatchNorm2d') != -1 and classname.find('BatchNorm2dParallel') < 0:
-        init.constant_(m.weight.data, 1.0)
-        init.constant_(m.bias.data, 0.0)
-
+        if hasattr(m, 'bias') and m.bias is not None:
+            init.constant_(m.bias, 0.0)
+    elif classname.find('BatchNorm2d') != -1:
+        init.constant_(m.weight, 1.0)
+        if hasattr(m, 'bias') and m.bias is not None:
+            init.constant_(m.bias, 0.0)
 
 def set_random_seed(seed: int):
     """

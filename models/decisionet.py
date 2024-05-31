@@ -93,7 +93,7 @@ class DecisioNet(nn.Module):
 
 
 class NetworkInNetworkDecisioNet(nn.Module):
-    def __init__(self, cfg_name='10_baseline', dropout=True, config=None,
+    def __init__(self, cfg_name='10_baseline_single_early', dropout=True, config=None,
                  classes_division: Optional[Node] = None, decisionet_cls=None,
                  num_in_channels=3):
         super().__init__()
@@ -116,7 +116,7 @@ class NetworkInNetworkDecisioNet(nn.Module):
     def forward(self, x, **kwargs):
         features_out, sigmas = self.decisionet(x, **kwargs)
         out = self.classifier(features_out)
-        # out = torch.flatten(out, 1)
+        out = torch.flatten(out, 1)
         return out, sigmas
 
 

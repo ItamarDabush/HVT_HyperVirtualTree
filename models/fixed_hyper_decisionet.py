@@ -15,108 +15,102 @@ CIFAR10_INPUT_SIZE = INPUT_SIZE['CIFAR10'][1]
 SIZE_AFTER_TWO_MAXPOOL = 8
 BATCH_SIZE = 100
 INITIAL_SIGMA=0.5
+SCALE_FACTOR=64
 
 ConfigTuple = Tuple[Union[int, str, Tuple[int, int]], ...]
 ConfigList = List[Any]
 
 class SubHyperDecisioNet(nn.Module):
 
-    def __init__(self, hyper, initial_hin, multi_hyper, node_code: Tuple[int, ...] = ()):
+    def __init__(self, hyper, multi_hyper, initial_hin=0, node_code: Tuple[int, ...] = ()):
         super().__init__()
         self.node_code = node_code
         self.hyper = hyper
         self.multi_hyper = multi_hyper
-        self.flag = False
         if self.hyper:
-            self.features = nn.Sequential(nn.Linear(1, 2320), nn.ReLU(),
-                                          nn.MaxPool2d(kernel_size=2, stride=None, padding=0),
-                                          nn.Flatten(1, -1), nn.Linear(1, 65600), nn.ReLU())
+            self.features = nn.Sequential(nn.Linear(1, 230496), nn.ReLU(),
+                                          (nn.Conv2d(96, 96, 1, padding=0)), nn.ReLU(inplace=True),
+                                          (nn.Conv2d(96, 96, 1, padding=0)), nn.ReLU(inplace=True),
+                                          nn.AvgPool2d(kernel_size=3, stride=2, padding=1),
+                                          nn.Dropout(0.5, inplace=True),
+                                          (nn.Conv2d(96, 96, 3, padding=1)), nn.ReLU(inplace=True),
+                                          (nn.Conv2d(96, 96, 1, padding=0)), nn.ReLU(inplace=True),
+                                          (nn.Conv2d(96, 10, 1, padding=0)))
         else:
-            self.features = nn.Sequential((nn.Conv2d(16, 16, 3, stride=(1, 1), padding=(1, 1))), nn.ReLU(),
-                                          nn.MaxPool2d(kernel_size=2, stride=None, padding=0),
-                                          nn.Flatten(1, -1), nn.Linear(1024, 64), nn.ReLU())
-        self.initial_hin = torch.tensor([initial_hin]).to(next(self.parameters()).device)
+            self.features = nn.Sequential((nn.Conv2d(96, 96, 5, padding=2)), nn.ReLU(inplace=True),
+                                          (nn.Conv2d(96, 96, 1, padding=0)), nn.ReLU(inplace=True),
+                                          (nn.Conv2d(96, 96, 1, padding=0)), nn.ReLU(inplace=True),
+                                          nn.AvgPool2d(kernel_size=3, stride=2, padding=1),
+                                          nn.Dropout(0.5),
+                                          (nn.Conv2d(96, 96, 3, padding=1)), nn.ReLU(inplace=True),
+                                          (nn.Conv2d(96, 96, 1, padding=0)), nn.ReLU(inplace=True),
+                                          (nn.Conv2d(96, 10, 1, padding=0)))
+
+        if self.hyper:
+            self.register_buffer('INITIAL_SIGMA', torch.tensor([INITIAL_SIGMA+initial_hin/SCALE_FACTOR]))
+
+        if self.multi_hyper:
+            self.register_buffer('INITIAL_SIGMA', torch.tensor([INITIAL_SIGMA]))
+            self.register_buffer('SCALE_FACTOR', torch.tensor([SCALE_FACTOR]))
 
     def forward(self, x, h_in=None, **kwargs):
         if self.hyper:
-            for feature in self.features:
-                if 'Linear' in feature.__str__():
-                    if self.flag:
-                        h_in = self.initial_hin.to(next(self.parameters()).device)
+            for i, feature in enumerate(self.features):
+                if 'Linear' in feature.__str__() and i == 0:
+                    if self.multi_hyper:
+                        h_in = (self.INITIAL_SIGMA+h_in/self.SCALE_FACTOR)
+                        outputs = []
+                        tot_weights = feature(h_in)
+                        for i, sigma in enumerate(h_in):
+                            curr_tot_weights = tot_weights[i]
+                            current_image = x[i:i+1]
+                            current_weights = torch.reshape(
+                                curr_tot_weights[:230400],
+                                (96, 96, 5, 5))
+                            current_bias = curr_tot_weights[230400:]
+                            output = F.conv2d(current_image, current_weights, current_bias, padding=2)
+                            outputs.append(output)
+                        x = torch.cat(outputs, dim=0)
+                    else:
+                        h_in = self.INITIAL_SIGMA
                         tot_weights = feature(h_in)
                         weights = torch.reshape(
-                            tot_weights[:65536],
-                            (64, 1024))
-                        bias = tot_weights[65536:]
-                        x = F.linear(x, weights, bias)
-                        self.flag = False
-                    else:
-                        if self.multi_hyper:
-                            h_in = h_in.to(next(self.parameters()).device)
-                            outputs = []
-                            tot_weights = feature(h_in)
-                            for i, sigma in enumerate(h_in):
-                                curr_tot_weights = tot_weights[i]
-                                current_image = x[i:i+1]
-                                current_weights = torch.reshape(
-                                    curr_tot_weights[:2304],
-                                    (16, 16, 3, 3))
-                                current_bias = curr_tot_weights[2304:]
-                                output = F.conv2d(current_image, current_weights, current_bias, stride=(1, 1), padding=(1, 1))
-                                outputs.append(output)
-                            x = torch.cat(outputs, dim=0)
-                        else:
-                            h_in = self.initial_hin.to(next(self.parameters()).device)
-                            tot_weights = feature(h_in)
-                            weights = torch.reshape(
-                                tot_weights[:2304],
-                                (16, 16, 3, 3))
-                            bias = tot_weights[2304:]
-                            x = F.conv2d(x, weights, bias, stride=(1, 1), padding=(1, 1))
-                        self.flag = True
+                            tot_weights[:230400],
+                            (96, 96, 5, 5))
+                        bias = tot_weights[230400:]
+                        x = F.conv2d(x, weights, bias, padding=2)
                 else:
                     x = feature(x)
         else:
             x = self.features(x)
         return x, None
 
-class MainHyperDecisioNet(nn.Module):
+class SharedNet(nn.Module):
 
     def __init__(self, hyper=False, multi_hyper=False, subcls=SubHyperDecisioNet, node_code: Tuple[int, ...] = ()):
         super().__init__()
         self.node_code = node_code
         self.hyper = hyper
         self.multi_hyper = multi_hyper
+        self.features = nn.Sequential(nn.Conv2d(3, 192, 5, padding=2), nn.ReLU(inplace=True),
+                                      nn.Conv2d(192, 160, 1, padding=0), nn.ReLU(inplace=True),
+                                      nn.Conv2d(160, 96, 1, padding=0), nn.ReLU(inplace=True),
+                                      nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
+                                      nn.Dropout(0.5))
         if self.hyper:
-            self.features = nn.Sequential(nn.Linear(1, 448), nn.ReLU(),
-                                          nn.MaxPool2d(kernel_size=2, stride=None, padding=0))
+            self.left = subcls(hyper=self.hyper, multi_hyper=self.multi_hyper, initial_hin=0,
+                               node_code=self.node_code + (0,))
+            self.right = subcls(hyper=self.hyper, multi_hyper=self.multi_hyper, initial_hin=1,
+                                node_code=self.node_code + (1,))
         else:
-            self.features = nn.Sequential((nn.Conv2d(3, 16, 3, stride=(1, 1), padding=(1, 1))), nn.ReLU(),
-                                          nn.MaxPool2d(kernel_size=2, stride=None, padding=0))
-        self.initial_hin = torch.tensor([INITIAL_SIGMA]).to(next(self.parameters()).device)
-
-        self.left = subcls(hyper=self.hyper, initial_hin=0.5, multi_hyper=self.multi_hyper,
-                           node_code=self.node_code + (0,))
-        self.right = subcls(hyper=self.hyper, initial_hin=0.5+1/64, multi_hyper=self.multi_hyper,
-                            node_code=self.node_code + (1,))
-        self.binary_selection_layer = BinarySelectionLayer(16)
+            self.left = subcls(hyper=self.hyper, multi_hyper=self.multi_hyper,
+                               node_code=self.node_code + (0,))
+            self.right = subcls(hyper=self.hyper, multi_hyper=self.multi_hyper,
+                                node_code=self.node_code + (1,))
+        self.binary_selection_layer = BinarySelectionLayer(96)
 
     def forward(self, x, h_in=None, **kwargs):
-        if self.hyper:
-            if h_in is None:
-                h_in = self.initial_hin.to(next(self.parameters()).device)
-            for feature in self.features:
-                if 'Linear' in feature.__str__():
-                    tot_weights = feature(h_in)
-                    weights = torch.reshape(
-                        tot_weights[:432],
-                        (16, 3, 3, 3))
-                    bias = tot_weights[432:]
-                    x = F.conv2d(x, weights, bias, stride=(1, 1), padding=(1, 1))
-                else:
-                    x = feature(x)
-        else:
-            x = self.features(x)
+        x = self.features(x)
         sigma = self.binary_selection_layer(x, **kwargs)
         if self.multi_hyper:
             x0, s0 = self.left(x, 1-sigma, **kwargs)
@@ -134,17 +128,67 @@ class MainHyperDecisioNet(nn.Module):
             sigma = torch.column_stack([sigma, filtered_decisions])
         return x, sigma
 
+class FixedBasicHyperDecisioNet(nn.Module):
+    def __init__(self, classifier_flag=True, hyper=False, multi_hyper=False):
+        super().__init__()
+        hyperdecisionet_cls = SharedNet
+        subhyperdecisionet_cls = SubHyperDecisioNet
+        self.hyperdecisionet = hyperdecisionet_cls(hyper=hyper, multi_hyper=multi_hyper, subcls=subhyperdecisionet_cls)
+        if classifier_flag:
+            # self.classifier = nn.Linear(96, 10)
+            self.classifier = nn.AdaptiveAvgPool2d((1, 1)) # original option
+        print("NetworkInNetworkDecisioNet init - Using the following config:")
+        print(self)
 
-class FixedNetworkInNetworkHyperDecisioNet(nn.Module):
+    def forward(self, x, **kwargs):
+        features_out, sigmas = self.hyperdecisionet(x, **kwargs)
+        out = self.classifier(features_out)
+        out = torch.flatten(out, 1)
+        return out, sigmas
+
+class SharedNet_1(nn.Module):
+
+    def __init__(self, hyper=False, multi_hyper=False, subcls=SubHyperDecisioNet, node_code: Tuple[int, ...] = ()):
+        super().__init__()
+        self.node_code = node_code
+        self.hyper = hyper
+        self.multi_hyper = multi_hyper
+        self.features = nn.Sequential((nn.Conv2d(3, 16, 3, stride=(1, 1), padding=(1, 1))), nn.ReLU(),
+                                      nn.MaxPool2d(kernel_size=2, stride=None, padding=0))
+
+        self.sub = subcls(hyper=self.hyper, initial_hin=0.5, multi_hyper=self.multi_hyper,
+                           node_code=self.node_code + (0,))
+        self.binary_selection_layer = BinarySelectionLayer(16)
+
+    def forward(self, x, h_in=None, **kwargs):
+        x = self.features(x)
+        sigma = self.binary_selection_layer(x, **kwargs)
+        if self.multi_hyper:
+            x0, s0 = self.sub(x, 1-sigma, **kwargs)
+            x1, s1 = self.sub(x, sigma, **kwargs)
+        else:
+            x0, s0 = self.sub(x, **kwargs)
+            x1, s1 = self.sub(x, **kwargs)
+        sigma_broadcasted = sigma[..., None, None] if x0.ndim == 4 else sigma
+        x = (1 - sigma_broadcasted) * x0 + sigma_broadcasted * x1
+        if s0 is not None and s1 is not None:
+            deeper_level_decisions = torch.stack([s0, s1], dim=-1)
+            bs = sigma.size(0)
+            sigma_idx = sigma.detach().ge(0.5).long().flatten()
+            filtered_decisions = deeper_level_decisions[torch.arange(bs), :, sigma_idx]
+            sigma = torch.column_stack([sigma, filtered_decisions])
+        return x, sigma
+
+class FixedBasicHyperDecisioNet_1(nn.Module):
     def __init__(self, hyperdecisionet_cls=None, classifier_flag=True, hyper=False, multi_hyper=False):
         super().__init__()
         if hyperdecisionet_cls is None:
-            hyperdecisionet_cls = MainHyperDecisioNet
+            hyperdecisionet_cls = SharedNet_1
             subhyperdecisionet_cls = SubHyperDecisioNet
         print("NetworkInNetworkDecisioNet init - Using the following config:")
         self.hyperdecisionet = hyperdecisionet_cls(hyper=hyper, multi_hyper=multi_hyper, subcls=subhyperdecisionet_cls)
         if classifier_flag:
-            self.classifier = nn.Linear(64, 10)
+            self.classifier = nn.Linear(96, 10)
 
     def forward(self, x, **kwargs):
         features_out, sigmas = self.hyperdecisionet(x, **kwargs)
@@ -154,6 +198,6 @@ class FixedNetworkInNetworkHyperDecisioNet(nn.Module):
 if __name__ == '__main__':
     from torchinfo import summary
 
-    model = FixedNetworkInNetworkHyperDecisioNet()
+    model = FixedBasicHyperDecisioNet_1()
     # out, sigmas = model(images)
     summary(model, (1, 3, 32, 32))

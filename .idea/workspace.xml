@@ -5,16 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="6dadbdc2-e2f8-40c0-80de-3454eee95714" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/HyperDecisioNet_remote.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/HyperDecisioNet_remote.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/decisionet.py" beforeDir="false" afterPath="$PROJECT_DIR$/models/decisionet.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/fixed_hyper_decisionet.py" beforeDir="false" afterPath="$PROJECT_DIR$/models/fixed_hyper_decisionet.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/network_in_network.py" beforeDir="false" afterPath="$PROJECT_DIR$/models/network_in_network.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/trainers/baseline_trainers.py" beforeDir="false" afterPath="$PROJECT_DIR$/trainers/baseline_trainers.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/trainers/basic_trainer.py" beforeDir="false" afterPath="$PROJECT_DIR$/trainers/basic_trainer.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/trainers/decisionet_trainers.py" beforeDir="false" afterPath="$PROJECT_DIR$/trainers/decisionet_trainers.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/trainers/fixed_hyper_decisionet_trainer.py" beforeDir="false" afterPath="$PROJECT_DIR$/trainers/fixed_hyper_decisionet_trainer.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils/common_tools.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/common_tools.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -281,7 +273,7 @@
       <workItem from="1714460263826" duration="1806000" />
       <workItem from="1714924508655" duration="105000" />
       <workItem from="1715196264714" duration="50281000" />
-      <workItem from="1716186511071" duration="58734000" />
+      <workItem from="1716186511071" duration="59891000" />
     </task>
     <servers />
   </component>

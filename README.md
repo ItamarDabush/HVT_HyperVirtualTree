@@ -1,5 +1,6 @@
 # HyperDecisioNet
-This code uses hyper network and ensemble learning to improve a classification network this code based on the official code of ["DecisioNet: A Binary-Tree Structured Neural Network"] by Noam Gottlieb and Michael Werman.
+This code uses hyper network and ensemble learning to improve a classification network.
+using hyper-network to create 2 branches of decisionet NiN.
 
 ## Prerequisites
 - Python 3.7+
@@ -68,6 +69,8 @@ The training framework fully supports logging metrics to the wonderful [Weights 
 Accuracy, loss and learning rates are logged automatically.
 ## Issues
 If you encounter any running issues, feel free to open an issue. We'll try to look into it and fix as needed.
+
+this code based on the official code of ["DecisioNet: A Binary-Tree Structured Neural Network"] by Noam Gottlieb and Michael Werman.
 
 ## Citation
 If you find this code useful, please cite our paper:

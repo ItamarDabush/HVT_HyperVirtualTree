@@ -1,0 +1,19 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.pyc
+
+# Virtual environment directories
+venv/
+env/
+checkpoints/
+
+# Distribution / packaging
+dist/
+build/
+
+# Unit test / coverage reports
+*.cover
+*.py,cover
+.coverage
+
+.ipynb_checkpoints

@@ -187,7 +187,7 @@ class FixedNetworkInNetworkHyperDecisioNetTrainer(FixedHyperDecisioNetTrainer):
 
     def _init_model(self):
         # set_random_seed(0)
-        model = FixedBasicHyperDecisioNet(hyper=True, multi_hyper=True)
+        model = FixedBasicHyperDecisioNet_1(hyper=True, multi_hyper=True)
         # model.apply(functools.partial(weights_init_kaiming, scale=0.1))
         # model.apply(self.weights_init_xavier)
         return model

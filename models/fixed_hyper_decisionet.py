@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from custom_layers.selection_layers import BinarySelectionLayer
+from custom_layers.selection_layers import BinarySelectionLayer, WideBinarySelectionLayer
 from models.network_in_network import NetworkInNetwork
 from models.wide_resnet import WideResNet
 from utils.binary_tree import Node
@@ -13,7 +13,6 @@ from utils.constants import INPUT_SIZE
 CIFAR10_INPUT_CHANNELS = INPUT_SIZE['CIFAR10'][0]
 CIFAR10_INPUT_SIZE = INPUT_SIZE['CIFAR10'][1]
 SIZE_AFTER_TWO_MAXPOOL = 8
-BATCH_SIZE = 100
 INITIAL_SIGMA=0.5
 SCALE_FACTOR=64
 
@@ -22,13 +21,13 @@ ConfigList = List[Any]
 
 class SubHyperDecisioNet(nn.Module):
 
-    def __init__(self, hyper, multi_hyper, initial_hin=0, node_code: Tuple[int, ...] = ()):
+    def __init__(self, hyper, multi_hyper, hyper_depth=96, initial_hin=0, node_code: Tuple[int, ...] = ()):
         super().__init__()
         self.node_code = node_code
         self.hyper = hyper
         self.multi_hyper = multi_hyper
         if self.hyper:
-            self.features = nn.Sequential(nn.Linear(1, 230496), nn.ReLU(),
+            self.features = nn.Sequential(nn.Linear(hyper_depth, 230496), nn.ReLU(),
                                           (nn.Conv2d(96, 96, 1, padding=0)), nn.ReLU(inplace=True),
                                           (nn.Conv2d(96, 96, 1, padding=0)), nn.ReLU(inplace=True),
                                           nn.AvgPool2d(kernel_size=3, stride=2, padding=1),
@@ -107,14 +106,14 @@ class SharedNet(nn.Module):
                                node_code=self.node_code + (0,))
             self.right = subcls(hyper=self.hyper, multi_hyper=self.multi_hyper,
                                 node_code=self.node_code + (1,))
-        self.binary_selection_layer = BinarySelectionLayer(96)
+        self.binary_selection_layer = WideBinarySelectionLayer(96)
 
     def forward(self, x, h_in=None, **kwargs):
         x = self.features(x)
-        sigma = self.binary_selection_layer(x, **kwargs)
+        sigma, embeding = self.binary_selection_layer(x, **kwargs)
         if self.multi_hyper:
-            x0, s0 = self.left(x, 1-sigma, **kwargs)
-            x1, s1 = self.right(x, sigma, **kwargs)
+            x0, s0 = self.left(x, 1-embeding, **kwargs)
+            x1, s1 = self.right(x, embeding, **kwargs)
         else:
             x0, s0 = self.left(x, **kwargs)
             x1, s1 = self.right(x, **kwargs)
@@ -153,30 +152,34 @@ class SharedNet_1(nn.Module):
         self.node_code = node_code
         self.hyper = hyper
         self.multi_hyper = multi_hyper
-        self.features = nn.Sequential((nn.Conv2d(3, 16, 3, stride=(1, 1), padding=(1, 1))), nn.ReLU(),
-                                      nn.MaxPool2d(kernel_size=2, stride=None, padding=0))
+        self.features = nn.Sequential(nn.Conv2d(3, 192, 5, padding=2), nn.ReLU(inplace=True),
+                                      nn.Conv2d(192, 160, 1, padding=0), nn.ReLU(inplace=True),
+                                      nn.Conv2d(160, 96, 1, padding=0), nn.ReLU(inplace=True),
+                                      nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
+                                      nn.Dropout(0.5))
 
-        self.sub = subcls(hyper=self.hyper, initial_hin=0.5, multi_hyper=self.multi_hyper,
+        self.sub = subcls(hyper=self.hyper, multi_hyper=self.multi_hyper,
                            node_code=self.node_code + (0,))
-        self.binary_selection_layer = BinarySelectionLayer(16)
+        self.binary_selection_layer = WideBinarySelectionLayer(96)
 
     def forward(self, x, h_in=None, **kwargs):
         x = self.features(x)
-        sigma = self.binary_selection_layer(x, **kwargs)
+        sigma, embeding = self.binary_selection_layer(x, **kwargs)
         if self.multi_hyper:
-            x0, s0 = self.sub(x, 1-sigma, **kwargs)
-            x1, s1 = self.sub(x, sigma, **kwargs)
+            # x0, s0 = self.sub(x, 1 - embeding, **kwargs)
+            x1, s1 = self.sub(x, embeding, **kwargs)
         else:
             x0, s0 = self.sub(x, **kwargs)
             x1, s1 = self.sub(x, **kwargs)
-        sigma_broadcasted = sigma[..., None, None] if x0.ndim == 4 else sigma
-        x = (1 - sigma_broadcasted) * x0 + sigma_broadcasted * x1
-        if s0 is not None and s1 is not None:
-            deeper_level_decisions = torch.stack([s0, s1], dim=-1)
-            bs = sigma.size(0)
-            sigma_idx = sigma.detach().ge(0.5).long().flatten()
-            filtered_decisions = deeper_level_decisions[torch.arange(bs), :, sigma_idx]
-            sigma = torch.column_stack([sigma, filtered_decisions])
+        sigma_broadcasted = sigma[..., None, None] if x1.ndim == 4 else sigma
+        # x = (1 - sigma_broadcasted) * x0 + sigma_broadcasted * x1
+        x = sigma_broadcasted * x1
+        # if s0 is not None and s1 is not None:
+        #     deeper_level_decisions = torch.stack([s0, s1], dim=-1)
+        #     bs = sigma.size(0)
+        #     sigma_idx = sigma.detach().ge(0.5).long().flatten()
+        #     filtered_decisions = deeper_level_decisions[torch.arange(bs), :, sigma_idx]
+        #     sigma = torch.column_stack([sigma, filtered_decisions])
         return x, sigma
 
 class FixedBasicHyperDecisioNet_1(nn.Module):
@@ -188,11 +191,14 @@ class FixedBasicHyperDecisioNet_1(nn.Module):
         print("NetworkInNetworkDecisioNet init - Using the following config:")
         self.hyperdecisionet = hyperdecisionet_cls(hyper=hyper, multi_hyper=multi_hyper, subcls=subhyperdecisionet_cls)
         if classifier_flag:
-            self.classifier = nn.Linear(96, 10)
+            self.classifier = nn.AdaptiveAvgPool2d((1, 1))  # original option
+        print("NetworkInNetworkDecisioNet init - Using the following config:")
+        print(self)
 
     def forward(self, x, **kwargs):
         features_out, sigmas = self.hyperdecisionet(x, **kwargs)
         out = self.classifier(features_out)
+        out = torch.flatten(out, 1)
         return out, sigmas
 
 if __name__ == '__main__':

@@ -1,0 +1,134 @@
+from typing import List, Union, Callable, Tuple, Optional, Any
+
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+from custom_layers.selection_layers import BinarySelectionLayer, NewBinarySelectionLayer
+from models.network_in_network import NetworkInNetwork
+from models.wide_resnet import WideResNet
+from utils.binary_tree import Node
+from utils.constants import INPUT_SIZE
+
+CIFAR10_INPUT_CHANNELS = INPUT_SIZE['CIFAR10'][0]
+CIFAR10_INPUT_SIZE = INPUT_SIZE['CIFAR10'][1]
+SIZE_AFTER_TWO_MAXPOOL = 8
+INITIAL_SIGMA = 0.5
+SCALE_FACTOR = 64
+
+ConfigTuple = Tuple[Union[int, str, Tuple[int, int]], ...]
+ConfigList = List[Any]
+
+
+class SubNet(nn.Module):
+    def __init__(self, initial_hin=0, node_code: Tuple[int, ...] = ()):
+        super().__init__()
+        self.node_code = node_code
+        self.features = nn.Sequential(nn.Conv2d(96, 96, 1, padding=0), nn.ReLU(inplace=True),
+                                      nn.Conv2d(96, 96, 1, padding=0), nn.ReLU(inplace=True),
+                                      nn.AvgPool2d(kernel_size=3, stride=2, padding=1),
+                                      nn.Dropout(0.5, inplace=True))
+
+    def forward(self, x, **kwargs):
+        x = self.features(x)
+        return x
+
+
+class HyperNet(nn.Module):
+
+    def __init__(self, hyper_depth=1, initial_hin=0, node_code: Tuple[int, ...] = ()):
+        super().__init__()
+        self.node_code = node_code
+
+        self.features = nn.Sequential(nn.Linear(hyper_depth, 230496), nn.ReLU(inplace=True),
+                                      nn.Conv2d(96, 96, 1, padding=0), nn.ReLU(inplace=True),
+                                      nn.Conv2d(96, 96, 1, padding=0), nn.ReLU(inplace=True),
+                                      nn.AvgPool2d(kernel_size=3, stride=2, padding=1),
+                                      nn.Dropout(0.5, inplace=True))
+
+        self.register_buffer('INITIAL_SIGMA', torch.tensor([INITIAL_SIGMA]))
+        self.register_buffer('SCALE_FACTOR', torch.tensor([SCALE_FACTOR]))
+
+    def forward(self, x, h_in=None, **kwargs):
+        for j, feature in enumerate(self.features):
+            if 'Linear' in feature.__str__():
+                h_in = (self.INITIAL_SIGMA + h_in / self.SCALE_FACTOR)
+                outputs = []
+                tot_weights = feature(h_in)
+                for i, sigma in enumerate(h_in):
+                    curr_tot_weights = tot_weights[i]
+                    current_image = x[i:i + 1]
+                    current_weights = torch.reshape(
+                        curr_tot_weights[:230400],
+                        (96, 96, 5, 5))
+                    current_bias = curr_tot_weights[230400:]
+                    output = F.conv2d(current_image, current_weights, current_bias, padding=2)
+                    outputs.append(output)
+                x = torch.cat(outputs, dim=0)
+            else:
+                x = feature(x)
+        return x, None
+
+
+class SharedNet(nn.Module):
+
+    def __init__(self):
+        super().__init__()
+
+        hypernet_cls = HyperNet
+        subnet_cls = SubNet
+
+        self.before_features = nn.Sequential(nn.Conv2d(3, 192, 5, padding=2), nn.ReLU(inplace=True),
+                                             nn.Conv2d(192, 160, 1, padding=0), nn.ReLU(inplace=True),
+                                             nn.Conv2d(160, 96, 1, padding=0), nn.ReLU(inplace=True),
+                                             nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
+                                             nn.Dropout(0.5))
+
+        self.after_features = nn.Sequential((nn.Conv2d(96, 96, 3, padding=1)), nn.ReLU(inplace=True),
+                                            (nn.Conv2d(96, 96, 1, padding=0)), nn.ReLU(inplace=True),
+                                            (nn.Conv2d(96, 10, 1, padding=0)))
+
+        self.hyper = hypernet_cls()
+        # self.right = subnet_cls(node_code=(0,))
+        # self.left = subnet_cls(node_code=(1,))
+
+        self.binary_selection_layer = NewBinarySelectionLayer(96)
+
+    def forward(self, x, h_in=None, **kwargs):
+        x = self.before_features(x)
+        sigma, sigma_b = self.binary_selection_layer(x, **kwargs)
+        if sigma_b is not None:
+            x0, s0 = self.hyper(x, (1 - sigma_b)*sigma, **kwargs)
+            x1, s1 = self.hyper(x, sigma_b*sigma, **kwargs)
+        else:
+            x0, s0 = self.hyper(x, 1 - sigma, **kwargs)
+            x1, s1 = self.hyper(x, sigma, **kwargs)
+        # x0 = self.right(x0)
+        # x1 = self.left(x1)
+        x = x0 + x1
+        x = self.after_features(x)
+        return x, sigma
+
+
+class NewFixedBasicHyperDecisioNet(nn.Module):
+    def __init__(self):
+        super().__init__()
+        sharednet_cls = SharedNet
+        self.hyperdecisionet = sharednet_cls()
+        self.classifier = nn.AdaptiveAvgPool2d((1, 1))  # original option
+        print("NetworkInNetworkDecisioNet init - Using the following config:")
+        print(self)
+
+    def forward(self, x, **kwargs):
+        features_out, sigmas = self.hyperdecisionet(x, **kwargs)
+        out = self.classifier(features_out)
+        out = torch.flatten(out, 1)
+        return out, sigmas
+
+
+if __name__ == '__main__':
+    from torchinfo import summary
+
+    model = NewFixedBasicHyperDecisioNet()
+    # out, sigmas = model(images)
+    summary(model, (1, 3, 32, 32))

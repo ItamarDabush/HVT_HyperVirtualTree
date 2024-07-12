@@ -4,10 +4,13 @@ import torch
 import torch.nn as nn
 import wandb
 from matplotlib import pyplot as plt
+from fvcore.nn import FlopCountAnalysis
 
 # from custom_layers.losses import WeightedMSELoss
 from data.datasets import FilteredRelabeledDatasets
 from models.fixed_hyper_decisionet import FixedBasicHyperDecisioNet, FixedBasicHyperDecisioNet_1
+from models.small_fixed_hyper_decisionet import SmallFixedBasicHyperDecisioNet_1
+from models.new_fixed_hyper_decisionet import NewFixedBasicHyperDecisioNet
 from trainers.basic_trainer import BasicTrainer
 from utils.constants import LABELS_MAP, CLASSES_NAMES, INPUT_SIZE, NUM_CLASSES
 from utils.metrics_tracker import SigmaLossMetricsTracker
@@ -20,8 +23,9 @@ class FixedHyperDecisioNetTrainer(BasicTrainer):
     def __init__(self):
         super().__init__()
         # sigma_weights = self._init_sigma_weights()
-        self.sigma_criterion = nn.MSELoss()  # WeightedMSELoss(sigma_weights)
-        self.metrics_tracker = SigmaLossMetricsTracker(self.include_top5)
+        if self.hyper:
+            self.sigma_criterion = nn.MSELoss()  # WeightedMSELoss(sigma_weights)
+            self.metrics_tracker = SigmaLossMetricsTracker(self.include_top5)
 
     def _init_model(self):
         raise NotImplementedError
@@ -186,9 +190,11 @@ class FixedHyperDecisioNetTrainer(BasicTrainer):
 class FixedNetworkInNetworkHyperDecisioNetTrainer(FixedHyperDecisioNetTrainer):
 
     def _init_model(self):
-        # set_random_seed(0)
-        model = FixedBasicHyperDecisioNet_1(hyper=True, multi_hyper=True)
-        # model.apply(functools.partial(weights_init_kaiming, scale=0.1))
+        set_random_seed(0)
+        self.hyper = True
+        # model = SmallFixedBasicHyperDecisioNet_1(hyper=self.hyper, multi_hyper=self.hyper)
+        model = NewFixedBasicHyperDecisioNet()
+        # model.apply(functools.partial(weights_init_kaiming, scale=0.01))
         # model.apply(self.weights_init_xavier)
         return model
 
@@ -219,5 +225,9 @@ class FixedNetworkInNetworkHyperDecisioNetTrainer(FixedHyperDecisioNetTrainer):
 if __name__ == '__main__':
     trainer = FixedNetworkInNetworkHyperDecisioNetTrainer()
     # trainer = WideResNetDecisioNetTrainer()
+    input_tensor = torch.randn(1, 3, 32, 32).to(trainer.device)
+    flops = FlopCountAnalysis(trainer.model, input_tensor)
+    print(f'Number Of Flops: {flops.total()}')
+    print(f'Number Of Parameters: {sum(p.numel() for p in trainer.model.parameters() if p.requires_grad)}')
     trainer.train_model()
     # trainer.evaluate()

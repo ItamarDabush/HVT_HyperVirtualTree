@@ -96,7 +96,7 @@ class BasicClassifierTrainer(BasicTrainer):
     def init_early_stopping(self):
         early_stopping_params = self.early_stopping_params
         if early_stopping_params is None:
-            early_stopping_params = {'mode': 'min', 'patience': 50, 'verbose': True}
+            early_stopping_params = {'mode': 'min', 'patience': 30, 'verbose': True}
         return EarlyStopping(**early_stopping_params)
 
     def _init_model(self):

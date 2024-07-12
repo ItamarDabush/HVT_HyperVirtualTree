@@ -243,16 +243,19 @@ def weights_init_kaiming(m, scale: float = 1):
     """
     classname = m.__class__.__name__
     if classname.find('Conv') != -1:
+        print(f"Initializing Conv layer: {classname}")
         init.kaiming_normal_(m.weight, a=0, mode='fan_in', nonlinearity='relu')
         m.weight.data *= scale
         if hasattr(m, 'bias') and m.bias is not None:
             init.constant_(m.bias, 0.0)
     elif classname.find('Linear') != -1:
+        print(f"Initializing Linear layer: {classname}")
         init.kaiming_normal_(m.weight, a=0, mode='fan_in', nonlinearity='relu')
         m.weight.data *= scale
         if hasattr(m, 'bias') and m.bias is not None:
             init.constant_(m.bias, 0.0)
     elif classname.find('BatchNorm2d') != -1:
+        print(f"Initializing BatchNorm2d layer: {classname}")
         init.constant_(m.weight, 1.0)
         if hasattr(m, 'bias') and m.bias is not None:
             init.constant_(m.bias, 0.0)

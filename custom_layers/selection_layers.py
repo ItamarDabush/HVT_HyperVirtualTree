@@ -58,7 +58,8 @@ class SelectionLayer(nn.Module):
         x = self.binarization(sigma, binarize=binarize)
         return x
 
-class WideBinarySelectionLayer(SelectionLayer):
+
+class NewBinarySelectionLayer(SelectionLayer):
 
     def __init__(self, in_channels, noise_mean=0.0, noise_stddev=1.0, reduction_rate=2, do_batchnorm=False):
         super().__init__(in_channels, 1, noise_mean, noise_stddev, reduction_rate)
@@ -70,14 +71,18 @@ class WideBinarySelectionLayer(SelectionLayer):
         self.fc = nn.Linear(in_channels, 1)
 
     def forward(self, x, binarize=None):
-        out = self.gap(x)
-        out_w = torch.flatten(out, 1)
+        x = self.gap(x)
+        x = torch.flatten(x, 1)
         if self.do_batchnorm:
-            out = self.bn(out_w)
-        sigma = self.fc(out_w)
-        out = self.binarization(sigma, binarize=binarize)
-        out_w = self.binarization(out_w, binarize=binarize)
-        return out, out_w
+            x = self.bn(x)
+        sigma = self.fc(x)
+        if binarize:
+            x_b = self.binarization(sigma, binarize=binarize)
+            x = self.binarization(sigma, binarize=not binarize)
+            return x, x_b
+        else:
+            x = self.binarization(sigma, binarize=not binarize)
+            return x, None
 
 class BinarySelectionLayer(SelectionLayer):
 

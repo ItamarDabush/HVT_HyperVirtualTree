@@ -4,6 +4,7 @@ import os
 from typing import Tuple, Dict
 
 import pandas as pd
+import torch
 
 
 def classes_to_idx(classes_list: collections.Iterable):
@@ -154,6 +155,8 @@ ENCODING_CLASS_HYPER_DIC = {
     8: [1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
     9: [1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]
 }
+
+ENCODING_CLASS_HYPERDECISIO_DIC = torch.tensor([[1, 0], [0, 1]], dtype=torch.float)
 
 # ADDING THE CLASS LABELS:
 for ds_labels_map in LABELS_MAP.values():

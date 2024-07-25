@@ -13,13 +13,13 @@ from models.small_fixed_hyper_decisionet import SmallFixedBasicHyperDecisioNet_1
 from models.new_fixed_hyper_decisionet import NewFixedBasicHyperDecisioNet
 from models.dual_rm_hyper_decisionet import DualNewFixedBasicHyperDecisioNet
 from trainers.basic_trainer import BasicTrainer
-from utils.constants import LABELS_MAP, CLASSES_NAMES, INPUT_SIZE, NUM_CLASSES
+from utils.constants import LABELS_MAP, CLASSES_NAMES, INPUT_SIZE, NUM_CLASSES, ENCODING_CLASS_HYPERDECISIO_DIC
 from utils.metrics_tracker import SigmaLossMetricsTracker
 from utils.common_tools import set_random_seed, weights_init_kaiming
 import torch.nn.init as init
 
 
-class FixedHyperDecisioNetTrainer(BasicTrainer):
+class DualRMHyperDecisioNetTrainer(BasicTrainer):
 
     def __init__(self):
         super().__init__()
@@ -45,15 +45,16 @@ class FixedHyperDecisioNetTrainer(BasicTrainer):
 
     def _feed_forward(self, inputs, targets):
         cls_targets, *sigma_targets = targets
-        sigma_targets = torch.column_stack(sigma_targets)
+        sigma_targets = sigma_targets[0].long()
+        encoded_sigma_targets = ENCODING_CLASS_HYPERDECISIO_DIC[sigma_targets].to(self.device)
         binarize = self.always_binarize or random.random() > 0.5
         outputs, sigmas = self.model(inputs, binarize=binarize)
         # print(f'Cls correct: {sum(torch.argmax(outputs, 1)==cls_targets)}')
-        # print(f'Sigma correct: {sum(sigmas==sigma_targets)}\n')
+        # print(f'Sigma correct: {sum(torch.argmax(sigmas,1)==sigma_targets)}\n')
         cls_loss = self.cls_criterion(outputs, cls_targets.long())
-        sigma_loss = self.sigma_criterion(sigmas, sigma_targets.float())
+        sigma_loss = self.sigma_criterion(sigmas, encoded_sigma_targets)
         combined_loss = cls_loss + self.beta * sigma_loss
-        self.metrics_tracker.update(cls_loss, sigma_loss, combined_loss, outputs, cls_targets, sigmas, sigma_targets)
+        self.metrics_tracker.update(cls_loss, sigma_loss, combined_loss, outputs, cls_targets, torch.argmax(sigmas, 1).unsqueeze(1).long(), sigma_targets.unsqueeze(1))
         return outputs, combined_loss
 
     def _single_epoch(self, epoch: int, train_test_val: str):
@@ -188,7 +189,7 @@ class FixedHyperDecisioNetTrainer(BasicTrainer):
         return sigma_weights
 
 
-class FixedNetworkInNetworkHyperDecisioNetTrainer(FixedHyperDecisioNetTrainer):
+class DualRMNetworkInNetworkHyperDecisioNetTrainer(DualRMHyperDecisioNetTrainer):
 
     def _init_model(self):
         set_random_seed(0)
@@ -224,7 +225,7 @@ class FixedNetworkInNetworkHyperDecisioNetTrainer(FixedHyperDecisioNetTrainer):
                 init.constant_(m.bias, 0.0)
 
 if __name__ == '__main__':
-    trainer = FixedNetworkInNetworkHyperDecisioNetTrainer()
+    trainer = DualRMNetworkInNetworkHyperDecisioNetTrainer()
     # trainer = WideResNetDecisioNetTrainer()
     input_tensor = torch.randn(1, 3, 32, 32).to(trainer.device)
     # flops = FlopCountAnalysis(trainer.model, input_tensor)

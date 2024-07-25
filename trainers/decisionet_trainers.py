@@ -85,8 +85,8 @@ class DecisioNetTrainer(BasicTrainer):
         hook_handles = []
         for name, layer in self.model.named_modules():
             if name == '':
-                activation_dict['predictions'] = torch.Tensor([])
-                activation_dict['sigma'] = torch.Tensor([])
+                activation_dict['predictions'] = torch.Tensor([]).to(self.device)
+                activation_dict['sigma'] = torch.Tensor([]).to(self.device)
                 handle = layer.register_forward_hook(get_activation(activation_dict))
                 hook_handles.append(handle)
         return hook_handles
@@ -97,7 +97,7 @@ class DecisioNetTrainer(BasicTrainer):
         self.register_hooks(activations_dict)
         super().evaluate()
         # norm_acc, _ = self._test_single_epoch(0)
-        targets = torch.tensor(self.datasets.test_set.targets)
+        targets = torch.tensor(self.datasets.test_set.targets).to(self.device)
         predictions = activations_dict['predictions']
         sigmas = activations_dict['sigma']
         cls_targets = targets[:, 0]
@@ -107,7 +107,7 @@ class DecisioNetTrainer(BasicTrainer):
         print(f"Class accuracy: {cls_acc * 100.}")
         sigma_diffs = (sigmas == sigma_targets)
         encoding = {0: 'both wrong', 1: 'first correct', 2: 'second correct', 3: 'both correct'}
-        encoded_results = torch.sum(sigma_diffs * torch.tensor([1., 2.]), dim=1)
+        encoded_results = torch.sum(sigma_diffs * torch.tensor([1., 2.]).to(self.device), dim=1)
         for code, s in encoding.items():
             print(f'{s}: {torch.sum(encoded_results == code).item()}')
         num_images = 0
@@ -124,7 +124,7 @@ class DecisioNetTrainer(BasicTrainer):
             cls_acc = torch.sum(predictions[cls_idx] == cls) / cls_idx.size(0)
             print(f"Accuracy: {cls_acc * 100.}")
             sigma_diffs = (sigmas[cls_idx] == sigma_targets[cls_idx])
-            encoded_results = torch.sum(sigma_diffs * torch.tensor([1., 2.]), dim=1)
+            encoded_results = torch.sum(sigma_diffs * torch.tensor([1., 2.]).to(self.device), dim=1)
             results = []
             for code, s in encoding.items():
                 correct = torch.sum(encoded_results == code).item()
@@ -140,7 +140,7 @@ class DecisioNetTrainer(BasicTrainer):
         activations_dict = {}
         self.register_hooks(activations_dict)
         super().evaluate()
-        targets = torch.tensor(self.datasets.test_set.targets)
+        targets = torch.tensor(self.datasets.test_set.targets).to(self.device)
         sigmas = activations_dict['sigma'].round()
         cls_targets = targets[:, 0]
         sigma_targets = targets[:, 1:]
@@ -261,5 +261,5 @@ class WideResNetDecisioNetTrainer(DecisioNetTrainer):
 if __name__ == '__main__':
     trainer = NetworkInNetworkDecisioNetTrainer()
     # trainer = WideResNetDecisioNetTrainer()
-    trainer.train_model()
-    # trainer.evaluate()
+    # trainer.train_model()
+    trainer.evaluate()

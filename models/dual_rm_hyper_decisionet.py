@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from custom_layers.selection_layers import BinarySelectionLayer, NewBinarySelectionLayer
+from custom_layers.selection_layers import BinarySelectionLayer, NewBinarySelectionLayer, DualNewBinarySelectionLayer
 from models.network_in_network import NetworkInNetwork
 from models.wide_resnet import WideResNet
 from utils.binary_tree import Node
@@ -29,7 +29,7 @@ class SubNet(nn.Module):
                                       nn.AvgPool2d(kernel_size=3, stride=2, padding=1),
                                       nn.Dropout(0.5, inplace=True))
 
-    def forward(self, x, **kwargs):
+    def forward(self, x):
         x = self.features(x)
         return x
 
@@ -49,7 +49,7 @@ class HyperNet(nn.Module):
         self.register_buffer('INITIAL_SIGMA', torch.tensor([INITIAL_SIGMA]))
         self.register_buffer('SCALE_FACTOR', torch.tensor([SCALE_FACTOR]))
 
-    def forward(self, x, h_in=None, binary=None, **kwargs):
+    def forward(self, x, h_in=None, binary=None):
         for j, feature in enumerate(self.features):
             if 'Linear' in feature.__str__():
                 if binary:
@@ -95,29 +95,37 @@ class SharedNet(nn.Module):
         # self.right = subnet_cls(node_code=(0,))
         # self.left = subnet_cls(node_code=(1,))
 
-        self.binary_selection_layer = NewBinarySelectionLayer(96)
+        self.binary_selection_layer = DualNewBinarySelectionLayer(96)
         self.register_buffer('INITIAL_SIGMA', torch.tensor([INITIAL_SIGMA]))
         self.register_buffer('SCALE_FACTOR', torch.tensor([SCALE_FACTOR]))
 
-    def forward(self, x, h_in=None, **kwargs):
+    def forward(self, x, binarize):
         x = self.before_features(x)
-        sigma, sigma_b, binary = self.binary_selection_layer(x, **kwargs)
-        if sigma_b is not None:
-            x0, s0 = self.hyper(x, (1 - sigma_b)*sigma, binary=binary, **kwargs)
-            x1, s1 = self.hyper(x, sigma_b*sigma, binary=binary, **kwargs)
+        sigmas, sigmas_b = self.binary_selection_layer(x, binarize)
+        if self.training:
+            if sigmas_b is not None:
+                x0, s0 = self.hyper(x, (sigmas_b[:, 0].unsqueeze(1))*sigmas[:, 0].unsqueeze(1), binary=True)
+                x1, s1 = self.hyper(x, sigmas_b[:, 1].unsqueeze(1)*sigmas[:, 1].unsqueeze(1), binary=True)
+                x = x0 + x1
+                x = self.after_features(x)
+                return x, sigmas_b
+            else:
+                x0, s0 = self.hyper(x, sigmas[:, 0].unsqueeze(1), binary=False)
+                x1, s1 = self.hyper(x, sigmas[:, 1].unsqueeze(1), binary=False)
+                x = x0 + x1
+                x = self.after_features(x)
+                return x, sigmas
         else:
-            x0, s0 = self.hyper(x, 1 - sigma, binary=binary, **kwargs)
-            x1, s1 = self.hyper(x, sigma, binary=binary, **kwargs)
-
+            x0, s0 = self.hyper(x, sigmas_b[:, 0].unsqueeze(1), binary=True)
+            x1, s1 = self.hyper(x, sigmas_b[:, 1].unsqueeze(1), binary=True)
+            x = x0 + x1
+            x = self.after_features(x)
+            return x, sigmas_b
 
         # x0 = self.right(x0)
         # x1 = self.left(x1)
-        x = x0 + x1
-        x = self.after_features(x)
-        return x, sigma
 
-
-class NewFixedBasicHyperDecisioNet(nn.Module):
+class DualNewFixedBasicHyperDecisioNet(nn.Module):
     def __init__(self):
         super().__init__()
         sharednet_cls = SharedNet
@@ -126,8 +134,8 @@ class NewFixedBasicHyperDecisioNet(nn.Module):
         print("NetworkInNetworkDecisioNet init - Using the following config:")
         print(self)
 
-    def forward(self, x, **kwargs):
-        features_out, sigmas = self.hyperdecisionet(x, **kwargs)
+    def forward(self, x, binarize):
+        features_out, sigmas = self.hyperdecisionet(x, binarize)
         out = self.classifier(features_out)
         out = torch.flatten(out, 1)
         return out, sigmas
@@ -136,6 +144,6 @@ class NewFixedBasicHyperDecisioNet(nn.Module):
 if __name__ == '__main__':
     from torchinfo import summary
 
-    model = NewFixedBasicHyperDecisioNet()
+    model = DualNewFixedBasicHyperDecisioNet()
     # out, sigmas = model(images)
     summary(model, (1, 3, 32, 32))

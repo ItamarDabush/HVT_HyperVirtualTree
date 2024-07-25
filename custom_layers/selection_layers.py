@@ -76,13 +76,75 @@ class NewBinarySelectionLayer(SelectionLayer):
         if self.do_batchnorm:
             x = self.bn(x)
         sigma = self.fc(x)
-        if binarize:
-            x_b = self.binarization(sigma, binarize=binarize)
-            x = self.binarization(sigma, binarize=not binarize)
+        if self.training:
+            if binarize:
+                x_b = self.binarization(sigma, binarize=binarize)
+                x = self.binarization(sigma, binarize=not binarize)
+                return x, x_b, True
+            else:
+                x = self.binarization(sigma, binarize=not binarize)
+                return x, None, False
+        else:
+            x_b = self.binarization(sigma)
+            return x_b, None, True
+
+
+class NewBinarizationLayer(nn.Module):
+
+    def __init__(self, noise_mean=0.0, noise_stddev=1.0):
+        super().__init__()
+        self.noise_mean = noise_mean
+        self.noise_stddev = noise_stddev
+
+    def forward(self, sigmas, binarize=None):
+        noise = 0
+        if self.training:
+            noise = torch.normal(self.noise_mean, self.noise_stddev, sigmas.size(), device=sigmas.device)
+        sigma_noised = sigmas + noise
+        binary_vals = torch.zeros_like(sigmas, dtype=torch.long)
+        binary_vals[:, 0] = (sigmas[:, 0] > sigmas[:, 1])
+        binary_vals[:, 1] = 1 - binary_vals[:, 0]
+        if self.training:  # train with real values
+            sat_sigma = saturated_sigmoid(sigma_noised)  # ga
+            if binarize is None:
+                binarize = random.random() > 0.5
+            if binarize:  # train with binary values
+                x = binary_vals + sat_sigma - sat_sigma.detach()
+            else:
+                x = sat_sigma
+        else:  # pass only binary values
+            x = binary_vals
+        return x
+
+class DualNewBinarySelectionLayer(SelectionLayer):
+
+    def __init__(self, in_channels, noise_mean=0.0, noise_stddev=1.0, reduction_rate=2, do_batchnorm=False):
+        super().__init__(in_channels, 1, noise_mean, noise_stddev, reduction_rate)
+        delattr(self, 'fc1')
+        delattr(self, 'fc2')
+        self.do_batchnorm = do_batchnorm
+        if not do_batchnorm:
+            delattr(self, 'bn')
+        self.fc = nn.Linear(in_channels, 2)
+        self.binarization = NewBinarizationLayer(noise_mean, noise_stddev)
+
+    def forward(self, x, binarize=None):
+        x = self.gap(x)
+        x = torch.flatten(x, 1)
+        if self.do_batchnorm:
+            x = self.bn(x)
+        sigmas = self.fc(x)
+        if self.training:
+            if binarize:
+                x_b = self.binarization(sigmas, binarize=binarize)
+                x = self.binarization(sigmas, binarize=not binarize)
+            else:
+                x = self.binarization(sigmas, binarize=not binarize)
+                x_b = None
             return x, x_b
         else:
-            x = self.binarization(sigma, binarize=not binarize)
-            return x, None
+            x_b = self.binarization(sigmas)
+            return None, x_b
 
 class BinarySelectionLayer(SelectionLayer):
 

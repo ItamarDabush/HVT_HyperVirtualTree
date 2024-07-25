@@ -256,7 +256,7 @@ class SigmaLossMetricsTracker:
         self.total_cls_correct_top5 += top5_correct
 
         # self.total_sigma_correct += sigma_outputs.round().eq(sigma_targets).all(dim=1).sum().item()
-        eq_sigma = sigma_outputs.round().eq(sigma_targets)
+        eq_sigma = sigma_outputs.float().round().eq(sigma_targets)
         eq_sigma[sigma_targets == 0.5] = True
         self.total_sigma_correct += eq_sigma.all(dim=1).sum().item()
 

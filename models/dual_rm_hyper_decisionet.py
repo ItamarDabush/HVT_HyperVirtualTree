@@ -101,26 +101,26 @@ class SharedNet(nn.Module):
 
     def forward(self, x, binarize):
         x = self.before_features(x)
-        sigmas, sigmas_b = self.binary_selection_layer(x, binarize)
+        sigmas_r, sigmas_b = self.binary_selection_layer(x, binarize)
         if self.training:
-            if sigmas_b is not None:
-                x0, s0 = self.hyper(x, (sigmas_b[:, 0].unsqueeze(1))*sigmas[:, 0].unsqueeze(1), binary=True)
-                x1, s1 = self.hyper(x, sigmas_b[:, 1].unsqueeze(1)*sigmas[:, 1].unsqueeze(1), binary=True)
+            if binarize:
+                x0, s0 = self.hyper(x, (1 - sigmas_b).unsqueeze(1)*sigmas_r[:, 0].unsqueeze(1), binary=True)
+                x1, s1 = self.hyper(x, sigmas_b.unsqueeze(1)*sigmas_r[:, 1].unsqueeze(1), binary=True)
                 x = x0 + x1
                 x = self.after_features(x)
-                return x, sigmas_b
+                return x, sigmas_b, sigmas_r
             else:
-                x0, s0 = self.hyper(x, sigmas[:, 0].unsqueeze(1), binary=False)
-                x1, s1 = self.hyper(x, sigmas[:, 1].unsqueeze(1), binary=False)
+                x0, s0 = self.hyper(x, sigmas_r[:, 0].unsqueeze(1), binary=False)
+                x1, s1 = self.hyper(x, sigmas_r[:, 1].unsqueeze(1), binary=False)
                 x = x0 + x1
                 x = self.after_features(x)
-                return x, sigmas
+                return x, sigmas_b, sigmas_r
         else:
-            x0, s0 = self.hyper(x, sigmas_b[:, 0].unsqueeze(1), binary=True)
-            x1, s1 = self.hyper(x, sigmas_b[:, 1].unsqueeze(1), binary=True)
+            x0, s0 = self.hyper(x, (1 - sigmas_b).unsqueeze(1), binary=True)
+            x1, s1 = self.hyper(x, sigmas_b.unsqueeze(1), binary=True)
             x = x0 + x1
             x = self.after_features(x)
-            return x, sigmas_b
+            return x, sigmas_b, sigmas_r
 
         # x0 = self.right(x0)
         # x1 = self.left(x1)
@@ -135,10 +135,10 @@ class DualNewFixedBasicHyperDecisioNet(nn.Module):
         print(self)
 
     def forward(self, x, binarize):
-        features_out, sigmas = self.hyperdecisionet(x, binarize)
+        features_out, sigmas_b, sigmas_r = self.hyperdecisionet(x, binarize)
         out = self.classifier(features_out)
         out = torch.flatten(out, 1)
-        return out, sigmas
+        return out, sigmas_b, sigmas_r
 
 
 if __name__ == '__main__':

@@ -3,7 +3,9 @@ import functools
 import torch
 import torch.nn as nn
 import wandb
+import matplotlib
 from matplotlib import pyplot as plt
+import seaborn as sns
 from fvcore.nn import FlopCountAnalysis
 
 # from custom_layers.losses import WeightedMSELoss
@@ -45,16 +47,15 @@ class DualRMHyperDecisioNetTrainer(BasicTrainer):
 
     def _feed_forward(self, inputs, targets):
         cls_targets, *sigma_targets = targets
-        sigma_targets = sigma_targets[0].long()
-        encoded_sigma_targets = ENCODING_CLASS_HYPERDECISIO_DIC[sigma_targets].to(self.device)
+        sigma_targets = torch.column_stack(sigma_targets)
         binarize = self.always_binarize or random.random() > 0.5
-        outputs, sigmas = self.model(inputs, binarize=binarize)
+        outputs, sigma_b, sigma_r = self.model(inputs, binarize=binarize)
         # print(f'Cls correct: {sum(torch.argmax(outputs, 1)==cls_targets)}')
-        # print(f'Sigma correct: {sum(torch.argmax(sigmas,1)==sigma_targets)}\n')
+        # print(f'Sigma correct: {sum(sigmas==sigma_targets)}\n')
         cls_loss = self.cls_criterion(outputs, cls_targets.long())
-        sigma_loss = self.sigma_criterion(sigmas, encoded_sigma_targets)
+        sigma_loss = self.sigma_criterion(sigma_b.unsqueeze(1), sigma_targets.float())
         combined_loss = cls_loss + self.beta * sigma_loss
-        self.metrics_tracker.update(cls_loss, sigma_loss, combined_loss, outputs, cls_targets, torch.argmax(sigmas, 1).unsqueeze(1).long(), sigma_targets.unsqueeze(1))
+        self.metrics_tracker.update(cls_loss, sigma_loss, combined_loss, outputs, cls_targets, sigma_b.unsqueeze(1), sigma_targets)
         return outputs, combined_loss
 
     def _single_epoch(self, epoch: int, train_test_val: str):
@@ -85,8 +86,10 @@ class DualRMHyperDecisioNetTrainer(BasicTrainer):
                 predictions = output[0].detach()
                 predictions = predictions.argmax(dim=1)
                 sigma = output[1].detach()
+                sigma_r = output[2].detach()
                 activations_dict['predictions'] = torch.cat([activations_dict['predictions'], predictions])
                 activations_dict['sigma'] = torch.cat([activations_dict['sigma'], sigma])
+                activations_dict['sigma_r'] = torch.cat([activations_dict['sigma_r'], sigma_r])
 
             return hook
 
@@ -95,6 +98,7 @@ class DualRMHyperDecisioNetTrainer(BasicTrainer):
             if name == '':
                 activation_dict['predictions'] = torch.Tensor([]).to(self.device)
                 activation_dict['sigma'] = torch.Tensor([]).to(self.device)
+                activation_dict['sigma_r'] = torch.Tensor([]).to(self.device)
                 handle = layer.register_forward_hook(get_activation(activation_dict))
                 hook_handles.append(handle)
         return hook_handles
@@ -108,14 +112,17 @@ class DualRMHyperDecisioNetTrainer(BasicTrainer):
         targets = torch.tensor(self.datasets.test_set.targets).to(self.device)
         predictions = activations_dict['predictions']
         sigmas = activations_dict['sigma']
+        sigmas_r = activations_dict['sigma_r']
         cls_targets = targets[:, 0]
         sigma_targets = targets[:, 1:]
 
+        print("Entire Model Analysis: ")
         cls_acc = torch.sum(predictions == cls_targets) / targets.size(0)
-        print(f"Class accuracy: {cls_acc * 100.}")
-        sigma_diffs = (sigmas == sigma_targets)
-        encoding = {0: 'both wrong', 1: 'first correct', 2: 'second correct', 3: 'both correct'}
-        encoded_results = torch.sum(sigma_diffs * torch.tensor([1., 2.]).to(self.device), dim=1)
+        print(f"Total Class accuracy: {cls_acc * 100.}")
+        sigma_diffs = (sigmas.unsqueeze(1) == sigma_targets)
+        print(f"Total Sigma accuracy: {torch.sum(sigma_diffs)/sigmas.size(0) * 100.}")
+        encoding = {0: 'wrong routing', 1: 'correct routing'}
+        encoded_results = torch.sum(sigma_diffs * torch.tensor([1.]).to(self.device), dim=1)
         for code, s in encoding.items():
             print(f'{s}: {torch.sum(encoded_results == code).item()}')
         num_images = 0
@@ -131,8 +138,9 @@ class DualRMHyperDecisioNetTrainer(BasicTrainer):
             cls_idx = torch.where(cls_targets == cls)[0]
             cls_acc = torch.sum(predictions[cls_idx] == cls) / cls_idx.size(0)
             print(f"Accuracy: {cls_acc * 100.}")
-            sigma_diffs = (sigmas[cls_idx] == sigma_targets[cls_idx])
-            encoded_results = torch.sum(sigma_diffs * torch.tensor([1., 2.]).to(self.device), dim=1)
+            sigma_diffs = (sigmas[cls_idx].unsqueeze(1) == sigma_targets[cls_idx])
+            print(f"Total Sigma accuracy: {torch.sum(sigma_diffs) / sigmas[cls_idx].size(0) * 100.}")
+            encoded_results = torch.sum(sigma_diffs * torch.tensor([1.]).to(self.device), dim=1)
             results = []
             for code, s in encoding.items():
                 correct = torch.sum(encoded_results == code).item()
@@ -140,6 +148,47 @@ class DualRMHyperDecisioNetTrainer(BasicTrainer):
                 print(f'{s}: {correct}')
             plt.bar(list(encoding.values()), results)
             num_images += 1
+
+        print("Each Branch Analysis: ")
+        branch_num = 2
+        for ii in range(branch_num):
+            branch_predictions = predictions[sigmas == ii]
+            branch_cls_targets = cls_targets[sigmas == ii]
+            branch_cls_acc = torch.sum(branch_predictions == branch_cls_targets) / branch_cls_targets.size(0)
+            print(f"Branch_{ii} Class accuracy: {branch_cls_acc * 100.}")
+
+            num_images = 0
+            for cls in self.classes_indices:
+                print("***********************************")
+                class_name = CLASSES_NAMES[self.dataset_name][cls]
+                plt.title(class_name)
+                print(f"Class: {class_name}")
+                cls_idx = torch.where(branch_cls_targets == cls)[0]
+                cls_acc = torch.sum(branch_predictions[cls_idx] == cls) / cls_idx.size(0)
+                print(f"Accuracy: {cls_acc * 100.}")
+        sigmas_r_0 = sigmas_r[sigmas == 0].cpu().numpy()
+        sigmas_r_1 = sigmas_r[sigmas == 1].cpu().numpy()
+        plt.figure(figsize=(10, 5))
+        histogram = False
+        density = True
+        if histogram:
+            plt.hist(sigmas_r_1, bins=50, alpha=0.5, label='Scalars For The First Branch', color='blue')
+            plt.hist(sigmas_r_0, bins=50, alpha=0.5, label='Scalars For The Second Branch', color='red')
+            plt.xlabel('Value')
+            plt.ylabel('Amount')
+            plt.legend(loc='upper right')
+            plt.title('Histogram of Scalars Based on Binary Values')
+        elif density:
+            plt.figure(figsize=(10, 6))
+            sns.kdeplot(sigmas_r_1, shade=True, color="blue", label="Scalars For The First Branch")
+            sns.kdeplot(sigmas_r_0, shade=True, color="red", label="Scalars For The Second Branch")
+            plt.xlabel('Scalar Value', fontsize=14)
+            plt.ylabel('Density', fontsize=14)
+            plt.title('Density Plot of Scalars For The Two Branches', fontsize=16)
+            plt.legend(fontsize=12)
+            plt.grid(True)
+            plt.xticks(fontsize=12)
+            plt.yticks(fontsize=12)
         plt.show()
         plt.tight_layout()
 

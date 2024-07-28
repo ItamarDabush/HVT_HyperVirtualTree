@@ -54,8 +54,8 @@ class BasicTrainer:
         self.scale_factor = self.config["scale_factor"]
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.num_gpus = torch.cuda.device_count()
-        # self.num_gpus = 1  # comment if parallel is desired
-        # self.parallel = False
+        self.num_gpus = 1  # comment if parallel is desired
+        self.parallel = False
         if self.num_gpus > 1:
             self.parallel = True
         self.image_size = INPUT_SIZE[self.dataset_name]

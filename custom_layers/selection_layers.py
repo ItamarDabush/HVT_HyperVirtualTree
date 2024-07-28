@@ -35,8 +35,9 @@ class BinarizationLayer(nn.Module):
             else:
                 x = sat_sigma
         else:  # pass only binary values
+            sat_sigma = saturated_sigmoid(sigma_noised)
             x = binary_vals
-        return x
+        return x, sat_sigma
 
 
 class SelectionLayer(nn.Module):
@@ -125,8 +126,9 @@ class DualNewBinarySelectionLayer(SelectionLayer):
         self.do_batchnorm = do_batchnorm
         if not do_batchnorm:
             delattr(self, 'bn')
-        self.fc = nn.Linear(in_channels, 2)
-        self.binarization = NewBinarizationLayer(noise_mean, noise_stddev)
+        self.fc = nn.Linear(in_channels, 3)
+        self.binarization = BinarizationLayer(noise_mean, noise_stddev)
+        self.register_buffer('ONES', torch.ones(2))
 
     def forward(self, x, binarize=None):
         x = self.gap(x)
@@ -135,16 +137,12 @@ class DualNewBinarySelectionLayer(SelectionLayer):
             x = self.bn(x)
         sigmas = self.fc(x)
         if self.training:
-            if binarize:
-                x_b = self.binarization(sigmas, binarize=binarize)
-                x = self.binarization(sigmas, binarize=not binarize)
-            else:
-                x = self.binarization(sigmas, binarize=not binarize)
-                x_b = None
+            x_b, _ = self.binarization(sigmas[:, 2], binarize=True)
+            x, _ = self.binarization(sigmas[:, 0:2], binarize=False)
             return x, x_b
         else:
-            x_b = self.binarization(sigmas)
-            return None, x_b
+            x_b, sat_sigma = self.binarization(sigmas[:, 2])
+            return sat_sigma, x_b
 
 class BinarySelectionLayer(SelectionLayer):
 

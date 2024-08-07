@@ -16,4 +16,5 @@ build/
 *.py,cover
 .coverage
 
+scripts/prepare_results_to_local.py
 .ipynb_checkpoints

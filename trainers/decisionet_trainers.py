@@ -259,7 +259,7 @@ class WideResNetDecisioNetTrainer(DecisioNetTrainer):
 
 
 if __name__ == '__main__':
-    trainer = NetworkInNetworkDecisioNetTrainer()
-    # trainer = WideResNetDecisioNetTrainer()
-    # trainer.train_model()
-    trainer.evaluate()
+    # trainer = NetworkInNetworkDecisioNetTrainer()
+    trainer = WideResNetDecisioNetTrainer()
+    trainer.train_model()
+    # trainer.evaluate()

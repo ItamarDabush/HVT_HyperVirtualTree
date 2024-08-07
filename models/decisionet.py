@@ -166,7 +166,7 @@ class WideResNetDecisioNetNode(nn.Module):
         x = self.features(x)
         if self.is_leaf:
             return x, None
-        sigma = self.binary_selection_layer(x, **kwargs)
+        sigma, _ = self.binary_selection_layer(x, **kwargs)
         x0, s0 = self.left(x, **kwargs)
         x1, s1 = self.right(x, **kwargs)
         sigma_broadcasted = sigma[..., None, None] if x0.ndim == 4 else sigma
@@ -280,7 +280,7 @@ class WideResNetDecisioNetMeasurement(WideResNetDecisioNet):
 if __name__ == '__main__':
     from torchinfo import summary
 
-    # model = WideResNetDecisioNet(cfg_name='100_baseline_single_late')
-    model = WideResNetDecisioNetMeasurement(cfg_name='100_baseline_single_early')
+    model = WideResNetDecisioNet(cfg_name='100_baseline_single_late')
+    # model = WideResNetDecisioNetMeasurement(cfg_name='100_baseline_single_early')
     # out, sigmas = model(images)
     summary(model, (1, 3, 32, 32))

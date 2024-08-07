@@ -11,7 +11,7 @@ from data.datasets import FilteredRelabeledDatasets
 from models.fixed_hyper_decisionet import FixedBasicHyperDecisioNet, FixedBasicHyperDecisioNet_1
 from models.small_fixed_hyper_decisionet import SmallFixedBasicHyperDecisioNet_1
 from models.new_fixed_hyper_decisionet import NewFixedBasicHyperDecisioNet
-from models.dual_rm_hyper_decisionet import DualNewFixedBasicHyperDecisioNet
+from models.nin_hyper_decisionet import DualNewFixedBasicHyperDecisioNet
 from trainers.basic_trainer import BasicTrainer
 from utils.constants import LABELS_MAP, CLASSES_NAMES, INPUT_SIZE, NUM_CLASSES
 from utils.metrics_tracker import SigmaLossMetricsTracker

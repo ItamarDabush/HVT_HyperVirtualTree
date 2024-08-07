@@ -117,7 +117,7 @@ class NewBinarizationLayer(nn.Module):
             x = binary_vals
         return x
 
-class DualNewBinarySelectionLayer(SelectionLayer):
+class EmbeddingBinarySelectionLayer(SelectionLayer):
 
     def __init__(self, in_channels, noise_mean=0.0, noise_stddev=1.0, reduction_rate=2, do_batchnorm=False):
         super().__init__(in_channels, 1, noise_mean, noise_stddev, reduction_rate)
@@ -141,7 +141,8 @@ class DualNewBinarySelectionLayer(SelectionLayer):
             x, _ = self.binarization(sigmas[:, 0:2], binarize=False)
             return x, x_b
         else:
-            x_b, sat_sigma = self.binarization(sigmas[:, 2])
+            x_b, _ = self.binarization(sigmas[:, 2])
+            _, sat_sigma = self.binarization(sigmas[:, 0:2])
             return sat_sigma, x_b
 
 class BinarySelectionLayer(SelectionLayer):

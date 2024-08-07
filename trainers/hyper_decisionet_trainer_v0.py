@@ -3,32 +3,25 @@ import functools
 import torch
 import torch.nn as nn
 import wandb
-import matplotlib
 from matplotlib import pyplot as plt
-import seaborn as sns
-from fvcore.nn import FlopCountAnalysis
 
 # from custom_layers.losses import WeightedMSELoss
 from data.datasets import FilteredRelabeledDatasets
-from models.fixed_hyper_decisionet import FixedBasicHyperDecisioNet, FixedBasicHyperDecisioNet_1
-from models.small_fixed_hyper_decisionet import SmallFixedBasicHyperDecisioNet_1
-from models.new_fixed_hyper_decisionet import NewFixedBasicHyperDecisioNet
-from models.dual_rm_hyper_decisionet import DualNewFixedBasicHyperDecisioNet
+from models.hyper_decisionet_v0 import NetworkInNetworkHyperDecisioNet, NIN_CFG
 from trainers.basic_trainer import BasicTrainer
-from utils.constants import LABELS_MAP, CLASSES_NAMES, INPUT_SIZE, NUM_CLASSES, ENCODING_CLASS_HYPERDECISIO_DIC
+from utils.constants import LABELS_MAP, CLASSES_NAMES, INPUT_SIZE, NUM_CLASSES
 from utils.metrics_tracker import SigmaLossMetricsTracker
 from utils.common_tools import set_random_seed, weights_init_kaiming
 import torch.nn.init as init
 
 
-class DualRMHyperDecisioNetTrainer(BasicTrainer):
+class HyperDecisioNetTrainer(BasicTrainer):
 
     def __init__(self):
         super().__init__()
         # sigma_weights = self._init_sigma_weights()
-        if self.hyper:
-            self.sigma_criterion = nn.MSELoss()  # WeightedMSELoss(sigma_weights)
-            self.metrics_tracker = SigmaLossMetricsTracker(self.include_top5)
+        self.sigma_criterion = nn.MSELoss()  # WeightedMSELoss(sigma_weights)
+        self.metrics_tracker = SigmaLossMetricsTracker(self.include_top5)
 
     def _init_model(self):
         raise NotImplementedError
@@ -49,13 +42,13 @@ class DualRMHyperDecisioNetTrainer(BasicTrainer):
         cls_targets, *sigma_targets = targets
         sigma_targets = torch.column_stack(sigma_targets)
         binarize = self.always_binarize or random.random() > 0.5
-        outputs, sigma_b, sigma_r = self.model(inputs, binarize=binarize)
+        outputs, sigmas = self.model(inputs, binarize=binarize)
         # print(f'Cls correct: {sum(torch.argmax(outputs, 1)==cls_targets)}')
         # print(f'Sigma correct: {sum(sigmas==sigma_targets)}\n')
         cls_loss = self.cls_criterion(outputs, cls_targets.long())
-        sigma_loss = self.sigma_criterion(sigma_b.unsqueeze(1), sigma_targets.float())
+        sigma_loss = self.sigma_criterion(sigmas, sigma_targets.float())
         combined_loss = cls_loss + self.beta * sigma_loss
-        self.metrics_tracker.update(cls_loss, sigma_loss, combined_loss, outputs, cls_targets, sigma_b.unsqueeze(1), sigma_targets)
+        self.metrics_tracker.update(cls_loss, sigma_loss, combined_loss, outputs, cls_targets, sigmas, sigma_targets)
         return outputs, combined_loss
 
     def _single_epoch(self, epoch: int, train_test_val: str):
@@ -86,19 +79,16 @@ class DualRMHyperDecisioNetTrainer(BasicTrainer):
                 predictions = output[0].detach()
                 predictions = predictions.argmax(dim=1)
                 sigma = output[1].detach()
-                sigma_r = output[2].detach()
                 activations_dict['predictions'] = torch.cat([activations_dict['predictions'], predictions])
                 activations_dict['sigma'] = torch.cat([activations_dict['sigma'], sigma])
-                activations_dict['sigma_r'] = torch.cat([activations_dict['sigma_r'], sigma_r])
 
             return hook
 
         hook_handles = []
         for name, layer in self.model.named_modules():
             if name == '':
-                activation_dict['predictions'] = torch.Tensor([]).to(self.device)
-                activation_dict['sigma'] = torch.Tensor([]).to(self.device)
-                activation_dict['sigma_r'] = torch.Tensor([]).to(self.device)
+                activation_dict['predictions'] = torch.Tensor([])
+                activation_dict['sigma'] = torch.Tensor([])
                 handle = layer.register_forward_hook(get_activation(activation_dict))
                 hook_handles.append(handle)
         return hook_handles
@@ -109,20 +99,17 @@ class DualRMHyperDecisioNetTrainer(BasicTrainer):
         self.register_hooks(activations_dict)
         super().evaluate()
         # norm_acc, _ = self._test_single_epoch(0)
-        targets = torch.tensor(self.datasets.test_set.targets).to(self.device)
+        targets = torch.tensor(self.datasets.test_set.targets)
         predictions = activations_dict['predictions']
         sigmas = activations_dict['sigma']
-        sigmas_r = activations_dict['sigma_r']
         cls_targets = targets[:, 0]
         sigma_targets = targets[:, 1:]
 
-        print("Entire Model Analysis: ")
         cls_acc = torch.sum(predictions == cls_targets) / targets.size(0)
-        print(f"Total Class accuracy: {cls_acc * 100.}")
-        sigma_diffs = (sigmas.unsqueeze(1) == sigma_targets)
-        print(f"Total Sigma accuracy: {torch.sum(sigma_diffs)/sigmas.size(0) * 100.}")
-        encoding = {0: 'wrong routing', 1: 'correct routing'}
-        encoded_results = torch.sum(sigma_diffs * torch.tensor([1.]).to(self.device), dim=1)
+        print(f"Class accuracy: {cls_acc * 100.}")
+        sigma_diffs = (sigmas == sigma_targets)
+        encoding = {0: 'both wrong', 1: 'first correct', 2: 'second correct', 3: 'both correct'}
+        encoded_results = torch.sum(sigma_diffs * torch.tensor([1., 2.]), dim=1)
         for code, s in encoding.items():
             print(f'{s}: {torch.sum(encoded_results == code).item()}')
         num_images = 0
@@ -138,9 +125,8 @@ class DualRMHyperDecisioNetTrainer(BasicTrainer):
             cls_idx = torch.where(cls_targets == cls)[0]
             cls_acc = torch.sum(predictions[cls_idx] == cls) / cls_idx.size(0)
             print(f"Accuracy: {cls_acc * 100.}")
-            sigma_diffs = (sigmas[cls_idx].unsqueeze(1) == sigma_targets[cls_idx])
-            print(f"Total Sigma accuracy: {torch.sum(sigma_diffs) / sigmas[cls_idx].size(0) * 100.}")
-            encoded_results = torch.sum(sigma_diffs * torch.tensor([1.]).to(self.device), dim=1)
+            sigma_diffs = (sigmas[cls_idx] == sigma_targets[cls_idx])
+            encoded_results = torch.sum(sigma_diffs * torch.tensor([1., 2.]), dim=1)
             results = []
             for code, s in encoding.items():
                 correct = torch.sum(encoded_results == code).item()
@@ -148,47 +134,6 @@ class DualRMHyperDecisioNetTrainer(BasicTrainer):
                 print(f'{s}: {correct}')
             plt.bar(list(encoding.values()), results)
             num_images += 1
-
-        print("Each Branch Analysis: ")
-        branch_num = 2
-        for ii in range(branch_num):
-            branch_predictions = predictions[sigmas == ii]
-            branch_cls_targets = cls_targets[sigmas == ii]
-            branch_cls_acc = torch.sum(branch_predictions == branch_cls_targets) / branch_cls_targets.size(0)
-            print(f"Branch_{ii} Class accuracy: {branch_cls_acc * 100.}")
-
-            num_images = 0
-            for cls in self.classes_indices:
-                print("***********************************")
-                class_name = CLASSES_NAMES[self.dataset_name][cls]
-                plt.title(class_name)
-                print(f"Class: {class_name}")
-                cls_idx = torch.where(branch_cls_targets == cls)[0]
-                cls_acc = torch.sum(branch_predictions[cls_idx] == cls) / cls_idx.size(0)
-                print(f"Accuracy: {cls_acc * 100.}")
-        sigmas_r_0 = sigmas_r[sigmas == 0].cpu().numpy()
-        sigmas_r_1 = sigmas_r[sigmas == 1].cpu().numpy()
-        plt.figure(figsize=(10, 5))
-        histogram = False
-        density = True
-        if histogram:
-            plt.hist(sigmas_r_1, bins=50, alpha=0.5, label='Scalars For The First Branch', color='blue')
-            plt.hist(sigmas_r_0, bins=50, alpha=0.5, label='Scalars For The Second Branch', color='red')
-            plt.xlabel('Value')
-            plt.ylabel('Amount')
-            plt.legend(loc='upper right')
-            plt.title('Histogram of Scalars Based on Binary Values')
-        elif density:
-            plt.figure(figsize=(10, 6))
-            sns.kdeplot(sigmas_r_1, shade=True, color="blue", label="Scalars For The First Branch")
-            sns.kdeplot(sigmas_r_0, shade=True, color="red", label="Scalars For The Second Branch")
-            plt.xlabel('Scalar Value', fontsize=14)
-            plt.ylabel('Density', fontsize=14)
-            plt.title('Density Plot of Scalars For The Two Branches', fontsize=16)
-            plt.legend(fontsize=12)
-            plt.grid(True)
-            plt.xticks(fontsize=12)
-            plt.yticks(fontsize=12)
         plt.show()
         plt.tight_layout()
 
@@ -197,7 +142,7 @@ class DualRMHyperDecisioNetTrainer(BasicTrainer):
         activations_dict = {}
         self.register_hooks(activations_dict)
         super().evaluate()
-        targets = torch.tensor(self.datasets.test_set.targets).to(self.device)
+        targets = torch.tensor(self.datasets.test_set.targets)
         sigmas = activations_dict['sigma'].round()
         cls_targets = targets[:, 0]
         sigma_targets = targets[:, 1:]
@@ -238,27 +183,27 @@ class DualRMHyperDecisioNetTrainer(BasicTrainer):
         return sigma_weights
 
 
-class DualRMNetworkInNetworkHyperDecisioNetTrainer(DualRMHyperDecisioNetTrainer):
+class NetworkInNetworkHyperDecisioNetTrainer(HyperDecisioNetTrainer):
 
     def _init_model(self):
         set_random_seed(0)
-        self.hyper = True
-        # model = SmallFixedBasicHyperDecisioNet_1(hyper=self.hyper, multi_hyper=self.hyper)
-        model = DualNewFixedBasicHyperDecisioNet()
-        # model.apply(functools.partial(weights_init_kaiming, scale=0.01))
+        model = NetworkInNetworkHyperDecisioNet(cfg_name=self.nin_cfg_name, num_in_channels=self.num_in_channels)
+        model.apply(functools.partial(weights_init_kaiming, scale=0.1))
         # model.apply(self.weights_init_xavier)
         return model
 
     def init_parser(self):
         parser = super().init_parser()
+        parser.add_argument('--nin_cfg_name', type=str, default='10_baseline', help='Name of the NiN config')
         return parser
 
     def _init_config_attributes(self):
         super()._init_config_attributes()
+        self.nin_cfg_name = self.config['nin_cfg_name']
 
     def init_data_sets(self):
         labels_map = dict(LABELS_MAP[self.dataset_name])
-        num_blocks = 2
+        num_blocks = len(NIN_CFG[self.nin_cfg_name])
         for k, v in labels_map.items():
             labels_map[k] = v[:num_blocks]
         return FilteredRelabeledDatasets(self.transforms, use_validation=self.use_validation,
@@ -274,11 +219,7 @@ class DualRMNetworkInNetworkHyperDecisioNetTrainer(DualRMHyperDecisioNetTrainer)
                 init.constant_(m.bias, 0.0)
 
 if __name__ == '__main__':
-    trainer = DualRMNetworkInNetworkHyperDecisioNetTrainer()
+    trainer = NetworkInNetworkHyperDecisioNetTrainer()
     # trainer = WideResNetDecisioNetTrainer()
-    input_tensor = torch.randn(1, 3, 32, 32).to(trainer.device)
-    # flops = FlopCountAnalysis(trainer.model, input_tensor)
-    # print(f'Number Of Flops: {flops.total()}')
-    print(f'Number Of Parameters: {sum(p.numel() for p in trainer.model.parameters() if p.requires_grad)}')
     trainer.train_model()
     # trainer.evaluate()

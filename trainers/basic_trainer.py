@@ -54,8 +54,8 @@ class BasicTrainer:
         self.scale_factor = self.config["scale_factor"]
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.num_gpus = torch.cuda.device_count()
-        self.num_gpus = 1  # comment if parallel is desired
-        self.parallel = False
+        # self.num_gpus = 1  # comment if parallel is desired
+        # self.parallel = False
         if self.num_gpus > 1:
             self.parallel = True
         self.image_size = INPUT_SIZE[self.dataset_name]
@@ -390,9 +390,9 @@ class BasicTrainer:
             msg_to_display += f' | Avg. Batch Processing Time: {int(1000 * (end_time - start_time) / num_batches)} ms'
             print(msg_to_display)
 
-        if epoch % 10 == 0 and f'decisio' not in self.config["network_type"]:
-            acc_msg_to_display = f'Tot_class_acc: {self.metrics_tracker.get_class_accuracy(num_batches)}'
-            print(acc_msg_to_display)
+        # if epoch % 10 == 0 and f'decisio' not in self.config["network_type"]:
+        #     acc_msg_to_display = f'Tot_class_acc: {self.metrics_tracker.get_class_accuracy(num_batches)}'
+        #     print(acc_msg_to_display)
 
         if train_test_val == 'test':
             top1_acc = 100. * norm_top1_acc

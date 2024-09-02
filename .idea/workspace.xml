@@ -4,33 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="6dadbdc2-e2f8-40c0-80de-3454eee95714" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/checkpoints/CIFAR10_baseline0_no_augment/best_ckpt.pth" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/checkpoints/MNIST_HyperNiNTry/deft-fire-1_ckpt.pth" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/checkpoints/MNIST_HyperNiNTry_no_augment/best_ckpt.pth" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/checkpoints/MNIST_baseline0_no_augment/amber-cloud-1_ckpt.pth" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/checkpoints/MNIST_baseline0_no_augment/best_ckpt.pth" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/checkpoints/MNIST_baseline0_no_augment/sunny-sponge-2_ckpt.pth" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/checkpoints/model_illustration/mnist_classifier.pt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/decisionet_unused_models.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/fixed_hyper_decisionet.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/hyper_decisionet_v0.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/new_fixed_hyper_decisionet.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/nin_hyper_decisionet.py" beforeDir="false" afterPath="$PROJECT_DIR$/models/nin_HVT.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/small_fixed_hyper_decisionet.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/wide_resnet_hyper_decisionet.py" beforeDir="false" afterPath="$PROJECT_DIR$/models/wide_resnet_HVT_1_split.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/wide_resnet_hyper_decisionet_2_split.py" beforeDir="false" afterPath="$PROJECT_DIR$/models/wide_resnet_HVT_2_split.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/wide_resnet_hyper_decisionet_2_split_new.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/wide_resnet_hyper_decisionet_2_split_new_0.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/trainers/fixed_hyper_decisionet_trainer.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/trainers/hyper_decisionet_trainer.py" beforeDir="false" afterPath="$PROJECT_DIR$/trainers/hyper_decisionet_trainer.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/trainers/hyper_decisionet_trainer_v0.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/trainers/hyper_trainers.py" beforeDir="false" afterPath="$PROJECT_DIR$/trainers/hyper_trainers.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/trainers/model_weights_aftergrads.pth" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/trainers/model_weights_beforegrads.pth" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/trainers/unused_decisionet_trainers.py" beforeDir="false" />
-    </list>
+    <list default="true" id="6dadbdc2-e2f8-40c0-80de-3454eee95714" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -320,7 +294,7 @@
       <workItem from="1719409454535" duration="12629000" />
       <workItem from="1720081173382" duration="309899000" />
       <workItem from="1723393794550" duration="12653000" />
-      <workItem from="1723678535873" duration="127595000" />
+      <workItem from="1723678535873" duration="127955000" />
     </task>
     <servers />
   </component>

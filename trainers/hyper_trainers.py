@@ -1,3 +1,4 @@
+"in this trainer we used to explore the implementation of a hypernetwork in our architecture"
 from utils.common_tools import set_random_seed, weights_init_kaiming
 import functools
 import wandb
@@ -251,8 +252,6 @@ class BasicClassifierTrainer(BasicTrainer):
 
 
 if __name__ == '__main__':
-    # trainer = NetworkInNetworkTrainer()
     trainer = BasicClassifierTrainer()
-    # trainer = WideResNetTrainer()
     trainer.train_model()
     # trainer.evaluate()

@@ -5,20 +5,31 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="6dadbdc2-e2f8-40c0-80de-3454eee95714" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/models/wide_resnet_hyper_decisionet_2_split_new.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/models/wide_resnet_hyper_decisionet_2_split_new_0.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/scripts/collect_leaf_entrophy.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/custom_layers/selection_layers.py" beforeDir="false" afterPath="$PROJECT_DIR$/custom_layers/selection_layers.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/nin_hyper_decisionet.py" beforeDir="false" afterPath="$PROJECT_DIR$/models/nin_hyper_decisionet.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/wide_resnet_hyper_decisionet.py" beforeDir="false" afterPath="$PROJECT_DIR$/models/wide_resnet_hyper_decisionet.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/wide_resnet_hyper_decisionet_2_split.py" beforeDir="false" afterPath="$PROJECT_DIR$/models/wide_resnet_hyper_decisionet_2_split.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/scripts/prepare_results_to_local.py" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/prepare_results_to_local.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/trainers/baseline_trainers.py" beforeDir="false" afterPath="$PROJECT_DIR$/trainers/baseline_trainers.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/trainers/basic_trainer.py" beforeDir="false" afterPath="$PROJECT_DIR$/trainers/basic_trainer.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/trainers/decisionet_trainers.py" beforeDir="false" afterPath="$PROJECT_DIR$/trainers/decisionet_trainers.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/checkpoints/CIFAR10_baseline0_no_augment/best_ckpt.pth" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/checkpoints/MNIST_HyperNiNTry/deft-fire-1_ckpt.pth" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/checkpoints/MNIST_HyperNiNTry_no_augment/best_ckpt.pth" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/checkpoints/MNIST_baseline0_no_augment/amber-cloud-1_ckpt.pth" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/checkpoints/MNIST_baseline0_no_augment/best_ckpt.pth" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/checkpoints/MNIST_baseline0_no_augment/sunny-sponge-2_ckpt.pth" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/checkpoints/model_illustration/mnist_classifier.pt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/decisionet_unused_models.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/fixed_hyper_decisionet.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/hyper_decisionet_v0.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/new_fixed_hyper_decisionet.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/nin_hyper_decisionet.py" beforeDir="false" afterPath="$PROJECT_DIR$/models/nin_HVT.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/small_fixed_hyper_decisionet.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/wide_resnet_hyper_decisionet.py" beforeDir="false" afterPath="$PROJECT_DIR$/models/wide_resnet_HVT_1_split.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/wide_resnet_hyper_decisionet_2_split.py" beforeDir="false" afterPath="$PROJECT_DIR$/models/wide_resnet_HVT_2_split.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/wide_resnet_hyper_decisionet_2_split_new.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/wide_resnet_hyper_decisionet_2_split_new_0.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/trainers/fixed_hyper_decisionet_trainer.py" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/trainers/hyper_decisionet_trainer.py" beforeDir="false" afterPath="$PROJECT_DIR$/trainers/hyper_decisionet_trainer.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils/metrics_tracker.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/metrics_tracker.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/trainers/hyper_decisionet_trainer_v0.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/trainers/hyper_trainers.py" beforeDir="false" afterPath="$PROJECT_DIR$/trainers/hyper_trainers.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/trainers/model_weights_aftergrads.pth" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/trainers/model_weights_beforegrads.pth" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/trainers/unused_decisionet_trainers.py" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -76,8 +87,11 @@
       <recent name="C:\Users\Itamar-pc\Desktop\Sofware_Thesis\HyperDecisioNet_remote\models" />
       <recent name="C:\Users\Itamar-pc\Desktop\Sofware_Thesis\HyperDecisioNet_remote\trainers" />
     </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\Itamar-pc\Desktop\Sofware_Thesis\HyperDecisioNet_remote\delete" />
+    </key>
   </component>
-  <component name="RunManager" selected="Python.baseline_evaluation">
+  <component name="RunManager" selected="Python.nin_hyper_decisionet_validate">
     <configuration default="true" type="PythonConfigurationType" factoryName="Python">
       <module name="HyperDecisioNet_remote" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -306,7 +320,7 @@
       <workItem from="1719409454535" duration="12629000" />
       <workItem from="1720081173382" duration="309899000" />
       <workItem from="1723393794550" duration="12653000" />
-      <workItem from="1723678535873" duration="126620000" />
+      <workItem from="1723678535873" duration="127595000" />
     </task>
     <servers />
   </component>
@@ -333,7 +347,7 @@
           <option name="timeStamp" value="327" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/models/nin_hyper_decisionet.py</url>
+          <url>file://$PROJECT_DIR$/models/nin_HVT.py</url>
           <line>117</line>
           <option name="timeStamp" value="412" />
         </line-breakpoint>
@@ -371,7 +385,7 @@
     <SUITE FILE_PATH="coverage/HyperDecisioNet_remote$find_preamble_using_gpu.coverage" NAME="find_preamble_using gpu Coverage Results" MODIFIED="1705822484357" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/scripts" />
     <SUITE FILE_PATH="coverage/HyperDecisioNet_remote$wide_resnet_hyper_decisionet.coverage" NAME="wide_resnet_hyper_decisionet Coverage Results" MODIFIED="1722532136484" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/models" />
     <SUITE FILE_PATH="coverage/HyperDecisioNet_remote$decisionet_trainers.coverage" NAME="decisionet_trainers Coverage Results" MODIFIED="1724832483443" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/trainers" />
-    <SUITE FILE_PATH="coverage/HyperDecisioNet_remote$baseline_evaluation.coverage" NAME="baseline_evaluation Coverage Results" MODIFIED="1725262671128" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/trainers" />
+    <SUITE FILE_PATH="coverage/HyperDecisioNet_remote$baseline_evaluation.coverage" NAME="baseline_evaluation Coverage Results" MODIFIED="1725289063009" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/trainers" />
     <SUITE FILE_PATH="coverage/HyperDecisioNet_remote$new_fixed_hyper_decisionet_trainer.coverage" NAME="fixed_hyper_decisionet_trainer Coverage Results" MODIFIED="1721745788872" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/models" />
     <SUITE FILE_PATH="coverage/HyperDecisioNet_remote$sweep_run__1_.coverage" NAME="sweep_run Coverage Results" MODIFIED="1693858078940" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/scripts" />
     <SUITE FILE_PATH="coverage/HyperDecisioNet_remote$nin_hyper_decisionet_validate.coverage" NAME="nin_hyper_decisionet_validate Coverage Results" MODIFIED="1724764588255" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/trainers" />

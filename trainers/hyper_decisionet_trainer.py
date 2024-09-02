@@ -12,14 +12,14 @@ from fvcore.nn import FlopCountAnalysis
 from scripts.prepare_results_to_local import prepare_output_to_local
 # from custom_layers.losses import WeightedMSELoss
 from data.datasets import FilteredRelabeledDatasets
-from models.nin_hyper_decisionet import NIN_HyperDecisioNet
+from models.nin_HVT import NIN_HyperDecisioNet
 from trainers.basic_trainer import BasicTrainer
 from utils.constants import LABELS_MAP, CLASSES_NAMES, INPUT_SIZE, NUM_CLASSES
 from utils.metrics_tracker import SigmaLossMetricsTracker
 from utils.common_tools import set_random_seed, weights_init_kaiming
 import torch.nn.init as init
-from models.wide_resnet_hyper_decisionet_2_split import WideResNet_HyperDecisioNet_2_split
-from models.wide_resnet_hyper_decisionet import WideResNet_HyperDecisioNet_1_split
+from models.wide_resnet_HVT_2_split import WideResNet_HyperDecisioNet_2_split
+from models.wide_resnet_HVT_1_split import WideResNet_HyperDecisioNet_1_split
 
 WRESNET_STAGE_SIZES = {'100_baseline': [[(16, 1)], [(16, 2)], [(16, 2)]],
                        '100_baseline_single_early': [[(16, 1)], [(16, 2), (32, 2)]],
@@ -481,8 +481,8 @@ class WideResNetDecisioNetTrainer(DecisioNetTrainer):
         return outputs, combined_loss
 
 if __name__ == '__main__':
-    trainer = WideResNetDecisioNetTrainer()
-    # trainer = NIN_HyperDecisioNetTrainer()
+    # trainer = WideResNetDecisioNetTrainer()
+    trainer = NIN_HyperDecisioNetTrainer()
     input_tensor = torch.randn(1, 3, 32, 32).to(trainer.device)
     # flops = FlopCountAnalysis(trainer.model, input_tensor)
     # print(f'Number Of Flops: {flops.total()}')

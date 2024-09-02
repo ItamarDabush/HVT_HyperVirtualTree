@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 import torch.nn.functional as F
-from custom_layers.selection_layers import BinarySelectionLayer, EmbeddingBinarySelectionLayer
+# from custom_layers.selection_layers import BinarySelectionLayer, EmbeddingBinarySelectionLayer
 
 ROOT_URL = 'https://github.com/yoshitomo-matsubara/torchdistill/releases/download'
 MODEL_URL_DICT = {
@@ -19,6 +19,90 @@ MODEL_URL_DICT = {
 
 INITIAL_SIGMA = 0.5
 SCALE_FACTOR = 64
+
+
+def saturated_sigmoid(x: torch.Tensor):
+    """Saturating sigmoid: 1.2 * sigmoid(x) - 0.1 cut to [0, 1]."""
+    y = torch.sigmoid(x)
+    # noinspection PyTypeChecker
+    saturated_sigmoid_ = torch.clamp(1.2 * y - 0.1, 0.0, 1.0)
+    return saturated_sigmoid_
+
+class SelectionLayer(nn.Module):
+    def __init__(self, in_channels, out_channels, noise_mean=0.0, noise_stddev=1.0, reduction_rate=2):
+        super().__init__()
+        self.gap = nn.AdaptiveAvgPool2d((1, 1))
+        mid_out_channels = max(out_channels // reduction_rate, 1)
+        self.fc1 = nn.Linear(in_channels, mid_out_channels)
+        self.bn = nn.BatchNorm1d(mid_out_channels)
+        self.fc2 = nn.Linear(mid_out_channels, out_channels)
+        self.binarization = BinarizationLayer(noise_mean, noise_stddev)
+
+    def forward(self, x, binarize=None):
+        x = self.gap(x)
+        x = torch.flatten(x, 1)
+        x = self.fc1(x)
+        x = F.relu(self.bn(x))
+        sigma = self.fc2(x)
+        x = self.binarization(sigma, binarize=binarize)
+        return x
+
+class EmbeddingBinarySelectionLayer(SelectionLayer):
+
+    def __init__(self, in_channels, noise_mean=0.0, noise_stddev=1.0, reduction_rate=2, do_batchnorm=False):
+        super().__init__(in_channels, 1, noise_mean, noise_stddev, reduction_rate)
+        delattr(self, 'fc1')
+        delattr(self, 'fc2')
+        self.do_batchnorm = do_batchnorm
+        if not do_batchnorm:
+            delattr(self, 'bn')
+        self.fc1 = nn.Linear(in_channels, 3)
+        self.binarization = BinarizationLayer(noise_mean, noise_stddev)
+        self.register_buffer('ONES', torch.ones(2))
+
+    def forward(self, x, binarize=None):
+        if isinstance(x, list):
+            x = torch.cat((self.gap(x[0]), self.gap(x[1])), dim=1)
+        else:
+            x = self.gap(x)
+        x = torch.flatten(x, 1)
+        if self.do_batchnorm:
+            x = self.bn(x)
+        sigmas = self.fc1(x)
+        if self.training:
+            x_b, _ = self.binarization(sigmas[:, 2], binarize=True)
+            x, _ = self.binarization(sigmas[:, 0:2], binarize=False)
+            return x, x_b
+        else:
+            x_b, _ = self.binarization(sigmas[:, 2])
+            _, sat_sigma = self.binarization(sigmas[:, 0:2])
+            return sat_sigma, x_b
+
+class BinarizationLayer(nn.Module):
+
+    def __init__(self, noise_mean=0.0, noise_stddev=1.0):
+        super().__init__()
+        self.noise_mean = noise_mean
+        self.noise_stddev = noise_stddev
+
+    def forward(self, sigma, binarize=None):
+        noise = 0
+        if self.training:
+            noise = torch.normal(self.noise_mean, self.noise_stddev, sigma.size(), device=sigma.device)
+        sigma_noised = sigma + noise
+        binary_vals = (sigma_noised > 0.0).float()  # gb
+        if self.training:  # train with real values
+            sat_sigma = saturated_sigmoid(sigma_noised)  # ga
+            if binarize is None:
+                binarize = random.random() > 0.5
+            if binarize:  # train with binary values
+                x = binary_vals + sat_sigma - sat_sigma.detach()
+            else:
+                x = sat_sigma
+        else:  # pass only binary values
+            sat_sigma = saturated_sigmoid(sigma_noised)
+            x = binary_vals
+        return x, sat_sigma
 
 class WideBasicBlock(nn.Module):
     def __init__(self, in_planes, out_planes, dropout_rate, stride=1):
@@ -85,13 +169,10 @@ class WideHyperBasicBlock(nn.Module):
     def forward(self, x, h_in=None, binary=None):
         out = self.bn1(x)
         out = self.relu(out)
-        if self.training:
-            if binary:
-                h_in = ((h_in > 1e-4) * self.INITIAL_SIGMA + h_in / self.SCALE_FACTOR)
-            else:
-                h_in = (self.INITIAL_SIGMA + h_in / self.SCALE_FACTOR)
-        else:
+        if binary:
             h_in = ((h_in > 1e-4) * self.INITIAL_SIGMA + h_in / self.SCALE_FACTOR)
+        else:
+            h_in = (self.INITIAL_SIGMA + h_in / self.SCALE_FACTOR)
         outputs = []
         tot_weights = self.hyperconv1(h_in)
         for i, sigma in enumerate(h_in):
@@ -123,7 +204,7 @@ class WideResNet_HyperDecisioNet_2_split(nn.Module):
     def __init__(self, depth, k, dropout_p, num_classes, num_in_channels, norm_layer=None):
         super().__init__()
         n = (depth - 4) / 6
-        stage_sizes = [16, 16 * k, 24 * k, 48 * k]
+        stage_sizes = [16, 16 * k, 16 * k, 32 * k]
         in_planes = 16
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
@@ -145,7 +226,7 @@ class WideResNet_HyperDecisioNet_2_split(nn.Module):
                 nn.init.constant_(m.bias, 0)
 
         self.binary_selection_layer1 = EmbeddingBinarySelectionLayer(stage_sizes[1])
-        self.binary_selection_layer2 = EmbeddingBinarySelectionLayer(stage_sizes[2])
+        self.binary_selection_layer2 = EmbeddingBinarySelectionLayer(stage_sizes[1] + stage_sizes[2])
 
     def create_sigmas(self, sigmas_b, sigmas_r, binarize):
         if self.training:
@@ -163,7 +244,8 @@ class WideResNet_HyperDecisioNet_2_split(nn.Module):
         # See note [TorchScript super()]
         x = self.conv1(x)
         x = self.layer1(x)
-        sigmas_r_1, sigmas_b_1, sigmas_b_r_1 = self.binary_selection_layer1(x, binarize)
+        x_prev = x
+        sigmas_r_1, sigmas_b_1 = self.binary_selection_layer1(x, binarize)
         sigmas_1_0, sigmas_1_1 = self.create_sigmas(sigmas_b_1, sigmas_r_1, binarize)
         for i, layer in enumerate(self.layer2):
             if isinstance(layer, WideHyperBasicBlock):
@@ -173,7 +255,7 @@ class WideResNet_HyperDecisioNet_2_split(nn.Module):
                 x0 = layer(x0)
                 x1 = layer(x1)
         x = x0 + x1
-        sigmas_r_2, sigmas_b_2, sigmas_b_r_2 = self.binary_selection_layer2(x, binarize)
+        sigmas_r_2, sigmas_b_2 = self.binary_selection_layer2([x, x_prev], binarize)
         sigmas_2_0, sigmas_2_1 = self.create_sigmas(sigmas_b_2, sigmas_r_2, binarize)
         for i, layer in enumerate(self.layer3):
             if isinstance(layer, WideHyperBasicBlock):
@@ -190,11 +272,7 @@ class WideResNet_HyperDecisioNet_2_split(nn.Module):
         x = self.fc(x)
         sigmas_b = torch.column_stack([sigmas_b_1, sigmas_b_2])
         sigmas_r = torch.column_stack([sigmas_r_1, sigmas_r_2])
-        if not self.training:
-            sigmas_b_r = torch.column_stack([sigmas_b_r_1, sigmas_b_r_2])
-            return x, sigmas_b, sigmas_r, sigmas_b_r
-        else:
-            return x, sigmas_b, sigmas_r, None
+        return x, sigmas_b, sigmas_r
 
     def forward(self, x: Tensor, binarize=None) -> Tensor:
         return self._forward_impl(x, binarize)

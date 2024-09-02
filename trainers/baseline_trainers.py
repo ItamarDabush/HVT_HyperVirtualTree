@@ -1,16 +1,18 @@
 from utils.common_tools import set_random_seed, weights_init_kaiming
 import functools
 
+import pandas as pd
 import torch.nn as nn
 import torch.optim.lr_scheduler
 from torchvision.models import vgg11, resnet18
 
+from scripts.prepare_results_to_local import prepare_output_to_local
 from data.transforms import BasicTransforms, ImageNetTransforms
 from models.network_in_network import NetworkInNetwork
 from models.wide_resnet import wide_resnet28_10
 from models.basic_classifier import BasicClassifier, HyperBasicClassifier, EnsembleBasicClassifier
 from trainers.basic_trainer import BasicTrainer
-from utils.constants import INPUT_SIZE
+from utils.constants import INPUT_SIZE, CLASSES_NAMES
 from utils.early_stopping import EarlyStopping
 
 
@@ -73,6 +75,52 @@ class WideResNetTrainer(BasicTrainer):
         model = wide_resnet28_10(num_classes=self.num_classes)
         return model
 
+    def register_hooks(self, activation_dict):
+        def get_activation(activations_dict):
+            def hook(model, input, output):
+                predictions = output.detach().argmax(dim=1)
+                activations_dict['predictions'] = torch.cat([activations_dict['predictions'], predictions])
+
+            return hook
+
+        hook_handles = []
+        for name, layer in self.model.named_modules():
+            if name == '':  # Assuming the main model module is to be hooked
+                activation_dict['predictions'] = torch.Tensor([]).to(self.device)
+                handle = layer.register_forward_hook(get_activation(activation_dict))
+                hook_handles.append(handle)
+        return hook_handles
+
+    def evaluate(self):
+        activations_dict = {}
+        self.register_hooks(activations_dict)
+        super().evaluate()
+
+        metrics_df = pd.DataFrame(columns=['Class', 'Accuracy'])
+
+        targets = torch.tensor(self.datasets.test_set.targets).to(self.device)
+        predictions = activations_dict['predictions']
+
+        cls_acc = torch.sum(predictions == targets) / targets.size(0)
+        print(f"Class accuracy: {cls_acc * 100:.2f}%")
+
+        # Visualizing class-wise accuracy
+        num_images = 0
+        for cls in self.classes_indices:
+            class_name = CLASSES_NAMES[self.dataset_name][cls]
+            print(f"Class: {class_name}")
+
+            cls_idx = torch.where(targets == cls)[0]
+            cls_acc = torch.sum(predictions[cls_idx] == cls) / cls_idx.size(0)
+            print(f"Accuracy: {cls_acc * 100:.2f}%")
+
+            # Append class accuracy to the DataFrame
+            metrics_df = metrics_df.append({'Class': class_name, 'Accuracy': cls_acc.item() * 100}, ignore_index=True)
+
+            results = torch.sum(predictions[cls_idx] == cls).item()
+
+        return metrics_df
+
 
 class VGG11Trainer(BasicTrainer):
 
@@ -107,8 +155,13 @@ class BasicClassifierTrainer(BasicTrainer):
 
 
 if __name__ == '__main__':
-    trainer = NetworkInNetworkTrainer()
+    # trainer = NetworkInNetworkTrainer()
     # trainer = BasicClassifierTrainer()
-    # trainer = WideResNetTrainer()
+    trainer = WideResNetTrainer()
+    params_num = sum(p.numel() for p in trainer.model.parameters() if p.requires_grad)
+    print(f'Number Of Parameters: {params_num}')
+
     # trainer.train_model()
-    trainer.evaluate()
+    results = trainer.evaluate()
+    experiment_name = f"{trainer.dataset_name}_{trainer.config['exp_name']}_params_num_{params_num}"
+    prepare_output_to_local(results, experiment_name)

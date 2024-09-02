@@ -2,6 +2,7 @@ from typing import List
 import torch
 import numpy as np
 from utils.constants import NUM_CLASSES
+from scipy.stats import entropy
 
 
 def topk_correct_predictions(output: torch.Tensor, target: torch.Tensor, topk=(1,)) -> List[torch.FloatTensor]:
@@ -232,7 +233,7 @@ class BinaryMetricsTracker(MetricsTracker):
 
 
 class SigmaLossMetricsTracker:
-    def __init__(self, include_top5=False) -> None:
+    def __init__(self, include_top5=False, include_entropy=False) -> None:
         self.total_loss = 0
         self.total_cls_loss = 0
         self.total_sigma_loss = 0
@@ -242,8 +243,18 @@ class SigmaLossMetricsTracker:
         self.total_samples = 0
         self.num_batches = 0
         self.include_top5 = include_top5
+        self.total_leaf_entropy = 0
+        self.include_entropy=include_entropy
 
     def update(self, cls_loss, sigma_loss, loss, cls_outputs, cls_targets, sigma_outputs, sigma_targets):
+        cls_loss = cls_loss.detach()
+        sigma_loss = sigma_loss.detach()
+        loss = loss.detach()
+        cls_outputs = cls_outputs.detach()
+        cls_targets = cls_targets.detach()
+        sigma_outputs = sigma_outputs.detach()
+        sigma_targets = sigma_targets.detach()
+
         self.total_samples += cls_targets.size(0)
 
         self.total_loss += loss.item()
@@ -259,6 +270,37 @@ class SigmaLossMetricsTracker:
         eq_sigma = sigma_outputs.float().round().eq(sigma_targets)
         eq_sigma[sigma_targets == 0.5] = True
         self.total_sigma_correct += eq_sigma.all(dim=1).sum().item()
+        if self.include_entropy:
+            avg_leaf_entropy = self.calculate_branchwise_entropy(sigma_outputs, sigma_targets)
+            self.total_leaf_entropy += avg_leaf_entropy
+
+    def calculate_branchwise_entropy(self, sigma_outputs, sigma_targets):
+        entropies = []
+        unique_sigma_targets = torch.unique(sigma_targets, dim=0)
+
+        for branch_encoding in unique_sigma_targets:
+
+            branch_idx = torch.where(sigma_targets == branch_encoding)[0]
+            true_routing_mask = torch.all(sigma_outputs[branch_idx] == branch_encoding, dim=1)
+            true_routing_count = torch.sum(true_routing_mask)
+            target_routing_count = branch_idx.size(0)
+
+            # Avoid division by zero
+            if target_routing_count > 0:
+                true_routing_prob = true_routing_count / target_routing_count
+                branch_entropy = self.mean_entropy(true_routing_prob, base=2)
+                entropies.append(branch_entropy)
+
+        avg_entropy = torch.mean(torch.tensor(entropies)) if entropies else torch.tensor(0.0)
+        return avg_entropy
+
+    def mean_entropy(self, prob, base=None, epsilon=1e-4):
+        # Ensure probabilities are valid
+        prob = prob.clamp(min=epsilon, max=1 - epsilon)
+        entropy = -prob * torch.log(prob) - (1 - prob) * torch.log(1 - prob)
+        if base is not None:
+            entropy /= torch.log(torch.tensor(base, dtype=entropy.dtype))
+        return entropy
 
     def get_message_to_display(self, batch_idx):
         total_loss_msg = f'Total Loss: {self.total_loss / (batch_idx + 1):.3f}'
@@ -273,6 +315,10 @@ class SigmaLossMetricsTracker:
                     f'({self.total_sigma_correct}/{self.total_samples})'
         msg_to_display = '; '.join([total_loss_msg, cls_msg, sigma_msg])
         return msg_to_display
+
+    def get_leaf_entrophy(self):
+        leaf_entrophy = self.total_leaf_entropy / self.num_batches
+        return leaf_entrophy
 
     def get_norm_loss(self):
         norm_loss = self.total_loss / self.num_batches
@@ -313,3 +359,4 @@ class SigmaLossMetricsTracker:
         self.total_sigma_correct = 0
         self.total_samples = 0
         self.num_batches = num_batches
+        self.total_leaf_entropy = 0

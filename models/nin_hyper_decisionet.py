@@ -52,10 +52,13 @@ class HyperNet(nn.Module):
     def forward(self, x, h_in=None, binary=None):
         for j, feature in enumerate(self.features):
             if 'Linear' in feature.__str__():
-                if binary:
-                    h_in = ((h_in > 1e-4) * self.INITIAL_SIGMA + h_in / self.SCALE_FACTOR)
+                if self.training:
+                    if binary:
+                        h_in = ((h_in > 1e-4) * self.INITIAL_SIGMA + h_in / self.SCALE_FACTOR)
+                    else:
+                        h_in = (self.INITIAL_SIGMA + h_in / self.SCALE_FACTOR)
                 else:
-                    h_in = (self.INITIAL_SIGMA + h_in / self.SCALE_FACTOR)
+                    h_in = ((h_in > 1e-4) * self.INITIAL_SIGMA + h_in / self.SCALE_FACTOR)
                 outputs = []
                 tot_weights = feature(h_in)
                 for i, sigma in enumerate(h_in):
@@ -101,7 +104,7 @@ class SharedNet(nn.Module):
 
     def forward(self, x, binarize):
         x = self.before_features(x)
-        sigmas_r, sigmas_b = self.binary_selection_layer(x, binarize)
+        sigmas_r, sigmas_b, sigmas_b_r = self.binary_selection_layer(x, binarize)
         if self.training:
             if binarize:
                 x0, s0 = self.hyper(x, (1 - sigmas_b).unsqueeze(1)*sigmas_r[:, 0].unsqueeze(1), binary=True)
@@ -114,7 +117,7 @@ class SharedNet(nn.Module):
             x1, s1 = self.hyper(x, sigmas_b.unsqueeze(1), binary=True)
         x = x0 + x1
         x = self.after_features(x)
-        return x, sigmas_b, sigmas_r
+        return x, sigmas_b, sigmas_r, sigmas_b_r
 
 
 class NIN_HyperDecisioNet(nn.Module):
@@ -127,10 +130,10 @@ class NIN_HyperDecisioNet(nn.Module):
         print(self)
 
     def forward(self, x, binarize):
-        features_out, sigmas_b, sigmas_r = self.hyperdecisionet(x, binarize)
+        features_out, sigmas_b, sigmas_r, sigmas_b_r = self.hyperdecisionet(x, binarize)
         out = self.classifier(features_out)
         out = torch.flatten(out, 1)
-        return out, sigmas_b, sigmas_r
+        return out, sigmas_b, sigmas_r, sigmas_b_r
 
 
 if __name__ == '__main__':

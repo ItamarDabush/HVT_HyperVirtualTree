@@ -5,20 +5,20 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="6dadbdc2-e2f8-40c0-80de-3454eee95714" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/models/wide_resnet_hyper_decisionet.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/models/wide_resnet_hyper_decisionet_2_split.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/scripts/prepare_results_to_local.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/models/wide_resnet_hyper_decisionet_2_split_new.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/models/wide_resnet_hyper_decisionet_2_split_new_0.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/scripts/collect_leaf_entrophy.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/custom_layers/selection_layers.py" beforeDir="false" afterPath="$PROJECT_DIR$/custom_layers/selection_layers.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/decisionet.py" beforeDir="false" afterPath="$PROJECT_DIR$/models/decisionet.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/dual_rm_hyper_decisionet.py" beforeDir="false" afterPath="$PROJECT_DIR$/models/nin_hyper_decisionet.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/hyper_decisionet.py" beforeDir="false" afterPath="$PROJECT_DIR$/models/hyper_decisionet_v0.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/nin_hyper_decisionet.py" beforeDir="false" afterPath="$PROJECT_DIR$/models/nin_hyper_decisionet.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/wide_resnet_hyper_decisionet.py" beforeDir="false" afterPath="$PROJECT_DIR$/models/wide_resnet_hyper_decisionet.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/wide_resnet_hyper_decisionet_2_split.py" beforeDir="false" afterPath="$PROJECT_DIR$/models/wide_resnet_hyper_decisionet_2_split.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/prepare_results_to_local.py" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/prepare_results_to_local.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/trainers/baseline_trainers.py" beforeDir="false" afterPath="$PROJECT_DIR$/trainers/baseline_trainers.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/trainers/basic_trainer.py" beforeDir="false" afterPath="$PROJECT_DIR$/trainers/basic_trainer.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/trainers/decisionet_trainers.py" beforeDir="false" afterPath="$PROJECT_DIR$/trainers/decisionet_trainers.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/trainers/dual_rm_hyper_decisionet_trainer.py" beforeDir="false" afterPath="$PROJECT_DIR$/trainers/hyper_decisionet_trainer_v0.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/trainers/fixed_hyper_decisionet_trainer.py" beforeDir="false" afterPath="$PROJECT_DIR$/trainers/fixed_hyper_decisionet_trainer.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/trainers/hyper_decisionet_trainer.py" beforeDir="false" afterPath="$PROJECT_DIR$/trainers/hyper_decisionet_trainer.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/metrics_tracker.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/metrics_tracker.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -46,28 +46,28 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "WebServerToolWindowFactoryState": "true",
-    "WebServerToolWindowPanel.toolwindow.highlight.mappings": "true",
-    "WebServerToolWindowPanel.toolwindow.highlight.symlinks": "true",
-    "WebServerToolWindowPanel.toolwindow.show.date": "false",
-    "WebServerToolWindowPanel.toolwindow.show.permissions": "false",
-    "WebServerToolWindowPanel.toolwindow.show.size": "false",
-    "ignore.virus.scanning.warn.message": "true",
-    "last_opened_file_path": "C:/Users/Itamar-pc/Desktop/Sofware_Thesis/HyperDecisioNet_remote/models",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;WebServerToolWindowFactoryState&quot;: &quot;true&quot;,
+    &quot;WebServerToolWindowPanel.toolwindow.highlight.mappings&quot;: &quot;true&quot;,
+    &quot;WebServerToolWindowPanel.toolwindow.highlight.symlinks&quot;: &quot;true&quot;,
+    &quot;WebServerToolWindowPanel.toolwindow.show.date&quot;: &quot;false&quot;,
+    &quot;WebServerToolWindowPanel.toolwindow.show.permissions&quot;: &quot;false&quot;,
+    &quot;WebServerToolWindowPanel.toolwindow.show.size&quot;: &quot;false&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/Itamar-pc/Desktop/Sofware_Thesis/HyperDecisioNet_remote/models&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="PyDebuggerOptionsProvider">
     <option name="mySupportGeventDebugging" value="true" />
   </component>
@@ -77,7 +77,7 @@
       <recent name="C:\Users\Itamar-pc\Desktop\Sofware_Thesis\HyperDecisioNet_remote\trainers" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.hyper_decisionet_validate">
+  <component name="RunManager" selected="Python.baseline_evaluation">
     <configuration default="true" type="PythonConfigurationType" factoryName="Python">
       <module name="HyperDecisioNet_remote" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -94,6 +94,28 @@
       <option name="SCRIPT_NAME" value="" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="true" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="baseline_evaluation" type="PythonConfigurationType" factoryName="Python">
+      <module name="HyperDecisioNet_remote" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/trainers" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/trainers/baseline_trainers.py" />
+      <option name="PARAMETERS" value="-d CIFAR100 -e wrn_baseline --network_type wrn --augment -w /home/itamar/HyperDecisioNet/checkpoints/CIFAR100_wrn_baseline/best_ckpt.pth" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
       <option name="MODULE_MODE" value="false" />
       <option name="REDIRECT_INPUT" value="false" />
@@ -121,7 +143,7 @@
         </option>
       </PathMappingSettings>
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/trainers/baseline_trainers.py" />
-      <option name="PARAMETERS" value="-d CIFAR10 -e nin --network_type nin -w /home/itamar/HyperDecisioNet/checkpoints/CIFAR10_nin/best_ckpt.pth" />
+      <option name="PARAMETERS" value="-d CIFAR100 -e wrn_baseline --network_type wrn --augment" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
       <option name="MODULE_MODE" value="false" />
@@ -143,7 +165,7 @@
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/trainers/decisionet_trainers.py" />
-      <option name="PARAMETERS" value="-d CIFAR100 -e decisio_wres --network_type decisio_wres --wrn_cfg_name 100_baseline --beta 3" />
+      <option name="PARAMETERS" value="-d CIFAR100 -e decisio_wres --network_type decisio_wres --wrn_cfg_name 100_baseline --beta 5" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
       <option name="MODULE_MODE" value="false" />
@@ -151,7 +173,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="hyper_decisionet_trainer" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+    <configuration name="nin_hyper_decisionet_validate" type="PythonConfigurationType" factoryName="Python">
       <module name="HyperDecisioNet_remote" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -162,26 +184,7 @@
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/trainers/hyper_decisionet_trainer.py" />
-      <option name="PARAMETERS" value="-d CIFAR100 -e Hyper_decisio_wrn_1_split_1 --network_type hyper_decisio_wrn --beta 3 --augment" />
-      <option name="SHOW_COMMAND_LINE" value="true" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
-    <configuration name="hyper_decisionet_validate" type="PythonConfigurationType" factoryName="Python">
-      <module name="HyperDecisioNet_remote" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/trainers" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/trainers/hyper_decisionet_trainer.py" />
-      <option name="PARAMETERS" value="-d CIFAR100 -e hyper_decisio_wrn --network_type hyper_decisio_wrn --wrn_cfg_name 100_baseline --beta 5 -w /home/itamar/HyperDecisioNet/checkpoints/CIFAR100_Hyper_decisio_wrn_new_hyper_1/best_ckpt.pth --include_top5" />
+      <option name="PARAMETERS" value="-d FashionMNIST -e hyper_decisio_nin --network_type hyper_decisio_nin --beta 3 -w /home/itamar/HyperDecisioNet/checkpoints/FashionMNIST_hyper_tree_nin_27_08/best_ckpt.pth --include_top5" />
       <option name="SHOW_COMMAND_LINE" value="true" />
       <option name="EMULATE_TERMINAL" value="false" />
       <option name="MODULE_MODE" value="false" />
@@ -193,6 +196,9 @@
       <module name="HyperDecisioNet_remote" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
       <option name="SDK_HOME" value="" />
       <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/models" />
       <option name="IS_MODULE_SDK" value="true" />
@@ -208,16 +214,56 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
+    <configuration name="wrn_hyper_decisionet_trainer" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="HyperDecisioNet_remote" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/trainers" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/trainers/hyper_decisionet_trainer.py" />
+      <option name="PARAMETERS" value="-d CIFAR100 -e hyper_tree_wrn_1_split_01_089 --wrn_cfg_name 100_baseline_single_early --network_type hyper_tree_wrn --beta 5 --augment" />
+      <option name="SHOW_COMMAND_LINE" value="true" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="wrn_hyper_decisionet_validate" type="PythonConfigurationType" factoryName="Python">
+      <module name="HyperDecisioNet_remote" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/trainers" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/trainers/hyper_decisionet_trainer.py" />
+      <option name="PARAMETERS" value="-d CIFAR100 -e hyper_decisio_wrn --network_type hyper_decisio_wrn --wrn_cfg_name 100_baseline_single_early --beta 5 -w /home/itamar/HyperDecisioNet/checkpoints/CIFAR100_hyper_tree_wrn_1_split_01_089/best_ckpt.pth --include_top5" />
+      <option name="SHOW_COMMAND_LINE" value="true" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <list>
       <item itemvalue="Python.baseline_trainers" />
-      <item itemvalue="Python.hyper_decisionet_validate" />
+      <item itemvalue="Python.baseline_evaluation" />
+      <item itemvalue="Python.wrn_hyper_decisionet_validate" />
+      <item itemvalue="Python.nin_hyper_decisionet_validate" />
       <item itemvalue="Python.wide_resnet" />
-      <item itemvalue="Python.hyper_decisionet_trainer" />
+      <item itemvalue="Python.wrn_hyper_decisionet_trainer" />
       <item itemvalue="Python.decisionet_trainers" />
     </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.hyper_decisionet_trainer" />
+        <item itemvalue="Python.wrn_hyper_decisionet_trainer" />
         <item itemvalue="Python.decisionet_trainers" />
         <item itemvalue="Python.wide_resnet" />
       </list>
@@ -258,7 +304,9 @@
       <workItem from="1716186511071" duration="91147000" />
       <workItem from="1718257300648" duration="3304000" />
       <workItem from="1719409454535" duration="12629000" />
-      <workItem from="1720081173382" duration="282321000" />
+      <workItem from="1720081173382" duration="309899000" />
+      <workItem from="1723393794550" duration="12653000" />
+      <workItem from="1723678535873" duration="126620000" />
     </task>
     <servers />
   </component>
@@ -284,6 +332,26 @@
           <line>180</line>
           <option name="timeStamp" value="327" />
         </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/models/nin_hyper_decisionet.py</url>
+          <line>117</line>
+          <option name="timeStamp" value="412" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/trainers/decisionet_trainers.py</url>
+          <line>264</line>
+          <option name="timeStamp" value="426" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/trainers/hyper_decisionet_trainer.py</url>
+          <line>256</line>
+          <option name="timeStamp" value="438" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/trainers/baseline_trainers.py</url>
+          <line>94</line>
+          <option name="timeStamp" value="439" />
+        </line-breakpoint>
       </breakpoints>
       <default-breakpoints>
         <breakpoint type="python-exception">
@@ -295,16 +363,19 @@
     </breakpoint-manager>
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/HyperDecisioNet_remote$baseline_trainers.coverage" NAME="baseline_trainers Coverage Results" MODIFIED="1721715435270" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/trainers" />
+    <SUITE FILE_PATH="coverage/HyperDecisioNet_remote$baseline_trainers.coverage" NAME="baseline_trainers Coverage Results" MODIFIED="1724920342088" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/trainers" />
     <SUITE FILE_PATH="coverage/HyperDecisioNet_remote$find_preamble.coverage" NAME="find_preamble Coverage Results" MODIFIED="1705746018528" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/scripts" />
-    <SUITE FILE_PATH="coverage/HyperDecisioNet_remote$dual_rm_hyper_decisionet_trainer.coverage" NAME="hyper_decisionet_trainer Coverage Results" MODIFIED="1722529020946" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/trainers" />
+    <SUITE FILE_PATH="coverage/HyperDecisioNet_remote$wrn_hyper_decisionet_validate.coverage" NAME="wrn_hyper_decisionet_validate Coverage Results" MODIFIED="1725186321472" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/trainers" />
+    <SUITE FILE_PATH="coverage/HyperDecisioNet_remote$dual_rm_hyper_decisionet_trainer.coverage" NAME="hyper_decisionet_trainer Coverage Results" MODIFIED="1723382198763" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/trainers" />
     <SUITE FILE_PATH="coverage/HyperDecisioNet_remote$hyper_trainers.coverage" NAME="hyper_trainers Coverage Results" MODIFIED="1712555588268" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/trainers" />
     <SUITE FILE_PATH="coverage/HyperDecisioNet_remote$find_preamble_using_gpu.coverage" NAME="find_preamble_using gpu Coverage Results" MODIFIED="1705822484357" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/scripts" />
     <SUITE FILE_PATH="coverage/HyperDecisioNet_remote$wide_resnet_hyper_decisionet.coverage" NAME="wide_resnet_hyper_decisionet Coverage Results" MODIFIED="1722532136484" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/models" />
-    <SUITE FILE_PATH="coverage/HyperDecisioNet_remote$decisionet_trainers.coverage" NAME="decisionet_trainers Coverage Results" MODIFIED="1722532407193" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/trainers" />
+    <SUITE FILE_PATH="coverage/HyperDecisioNet_remote$decisionet_trainers.coverage" NAME="decisionet_trainers Coverage Results" MODIFIED="1724832483443" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/trainers" />
+    <SUITE FILE_PATH="coverage/HyperDecisioNet_remote$baseline_evaluation.coverage" NAME="baseline_evaluation Coverage Results" MODIFIED="1725262671128" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/trainers" />
     <SUITE FILE_PATH="coverage/HyperDecisioNet_remote$new_fixed_hyper_decisionet_trainer.coverage" NAME="fixed_hyper_decisionet_trainer Coverage Results" MODIFIED="1721745788872" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/models" />
     <SUITE FILE_PATH="coverage/HyperDecisioNet_remote$sweep_run__1_.coverage" NAME="sweep_run Coverage Results" MODIFIED="1693858078940" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/scripts" />
-    <SUITE FILE_PATH="coverage/HyperDecisioNet_remote$hyper_decisionet_trainer.coverage" NAME="hyper_decisionet_trainer Coverage Results" MODIFIED="1715337407226" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/trainers" />
+    <SUITE FILE_PATH="coverage/HyperDecisioNet_remote$nin_hyper_decisionet_validate.coverage" NAME="nin_hyper_decisionet_validate Coverage Results" MODIFIED="1724764588255" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/trainers" />
+    <SUITE FILE_PATH="coverage/HyperDecisioNet_remote$hyper_decisionet_trainer.coverage" NAME="wrn_hyper_decisionet_trainer Coverage Results" MODIFIED="1724839221239" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/trainers" />
     <SUITE FILE_PATH="coverage/HyperDecisioNet_remote$fixed_hyper_decisionet_trainer.coverage" NAME="fixed_hyper_decisionet_trainer Coverage Results" MODIFIED="1721720470679" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/trainers" />
     <SUITE FILE_PATH="coverage/HyperDecisioNet_remote$try.coverage" NAME="try Coverage Results" MODIFIED="1689000300002" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/scripts" />
     <SUITE FILE_PATH="coverage/HyperDecisioNet_remote$mnist_classifier.coverage" NAME="mnist_classifier Coverage Results" MODIFIED="1689419567007" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/models" />

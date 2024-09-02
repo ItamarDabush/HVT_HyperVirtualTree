@@ -84,10 +84,13 @@ class WideHyperBasicBlock(nn.Module):
     def forward(self, x, h_in=None, binary=None):
         out = self.bn1(x)
         out = self.relu(out)
-        if binary:
-            h_in = ((h_in > 1e-4) * self.INITIAL_SIGMA + h_in / self.SCALE_FACTOR)
+        if self.training:
+            if binary:
+                h_in = ((h_in > 1e-4) * self.INITIAL_SIGMA + h_in / self.SCALE_FACTOR)
+            else:
+                h_in = (self.INITIAL_SIGMA + h_in / self.SCALE_FACTOR)
         else:
-            h_in = (self.INITIAL_SIGMA + h_in / self.SCALE_FACTOR)
+            h_in = ((h_in > 1e-4) * self.INITIAL_SIGMA + h_in / self.SCALE_FACTOR)
         outputs = []
         tot_weights = self.hyperconv1(h_in)
         for i, sigma in enumerate(h_in):
@@ -119,7 +122,7 @@ class WideResNet_HyperDecisioNet_1_split(nn.Module):
     def __init__(self, depth, k, dropout_p, num_classes, num_in_channels, norm_layer=None):
         super().__init__()
         n = (depth - 4) / 6
-        stage_sizes = [16, 16 * k, 16 * k, 32 * k]
+        stage_sizes = [16, 16 * k, 32 * k, 64 * k]
         in_planes = 16
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
@@ -159,7 +162,7 @@ class WideResNet_HyperDecisioNet_1_split(nn.Module):
         # See note [TorchScript super()]
         x = self.conv1(x)
         x = self.layer1(x)
-        sigma_r, sigma_b = self.binary_selection_layer1(x, binarize)
+        sigma_r, sigma_b, sigma_b_r = self.binary_selection_layer1(x, binarize)
         sigma_0, sigma_1 = self.create_sigmas(sigma_b, sigma_r, binarize)
         for i, layer in enumerate(self.layer2):
             if isinstance(layer, WideHyperBasicBlock):
@@ -175,7 +178,7 @@ class WideResNet_HyperDecisioNet_1_split(nn.Module):
         x = self.avgpool(x)
         x = torch.flatten(x, 1)
         x = self.fc(x)
-        return x, sigma_b, sigma_r
+        return x, sigma_b, sigma_r, sigma_b_r
 
     def forward(self, x: Tensor, binarize=None) -> Tensor:
         return self._forward_impl(x, binarize)

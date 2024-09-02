@@ -261,5 +261,6 @@ class WideResNetDecisioNetTrainer(DecisioNetTrainer):
 if __name__ == '__main__':
     # trainer = NetworkInNetworkDecisioNetTrainer()
     trainer = WideResNetDecisioNetTrainer()
+    print(f'Number Of Parameters: {sum(p.numel() for p in trainer.model.parameters() if p.requires_grad)}')
     trainer.train_model()
     # trainer.evaluate()

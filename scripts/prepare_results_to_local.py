@@ -18,7 +18,7 @@ def save_metrics_to_excel(metrics_df, output_folder, output_filename):
 
     return output_file
 
-def prepare_output_to_local(metrics_df):
+def prepare_output_to_local(metrics_df, experiment_name):
     now = datetime.datetime.now()
     formatted_date_time = now.strftime('%Y_%m_%d_%H_%M_%S')
     # Remote server details
@@ -26,7 +26,7 @@ def prepare_output_to_local(metrics_df):
     remote_host = '0.tcp.ngrok.io'
     remote_port = 15873
     remote_folder = '/home/itamar/HyperDecisioNet/validation_results'
-    remote_filename = f'model_evaluation_metrics_{formatted_date_time}.xlsx'
+    remote_filename = f'{experiment_name}_{formatted_date_time}.xlsx'
     remote_file_path = os.path.join(remote_folder, remote_filename)
 
     # Local machine details

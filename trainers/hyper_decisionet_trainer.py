@@ -31,7 +31,7 @@ class DecisioNetTrainer(BasicTrainer):
         super().__init__()
         # sigma_weights = self._init_sigma_weights()
         self.sigma_criterion = nn.MSELoss()  # WeightedMSELoss(sigma_weights)
-        self.metrics_tracker = SigmaLossMetricsTracker(self.include_top5)
+        self.metrics_tracker = SigmaLossMetricsTracker(self.include_top5, self.include_entropy)
 
     def _init_model(self):
         raise NotImplementedError
@@ -40,6 +40,7 @@ class DecisioNetTrainer(BasicTrainer):
         super()._init_config_attributes()
         self.beta = self.config['beta']
         self.always_binarize = self.config['always_binarize']
+        self.include_entropy = self.config['include_entropy']
 
     def init_data_sets(self):
         labels_map = dict(LABELS_MAP[self.dataset_name])
@@ -52,7 +53,7 @@ class DecisioNetTrainer(BasicTrainer):
         cls_targets, *sigma_targets = targets
         sigma_targets = torch.column_stack(sigma_targets)
         binarize = self.always_binarize or random.random() > 0.5
-        outputs, sigma_b, sigma_r = self.model(inputs, binarize=binarize)
+        outputs, sigma_b, sigma_r, _ = self.model(inputs, binarize=binarize)
         # print(f'Cls correct: {sum(torch.argmax(outputs, 1)==cls_targets)}')
         # print(f'Sigma correct: {sum(sigmas==sigma_targets)}\n')
         cls_loss = self.cls_criterion(outputs, cls_targets.long())
@@ -63,6 +64,8 @@ class DecisioNetTrainer(BasicTrainer):
 
     def _single_epoch(self, epoch: int, train_test_val: str):
         norm_acc, norm_loss = super()._single_epoch(epoch, train_test_val)
+        if (train_test_val == 'test') and self.include_entropy:
+            print(f'Average Leaf Entrophy: {self.metrics_tracker.get_leaf_entrophy()}')
         if self.use_wandb:
             log_dict = {f"{train_test_val}_cls_loss": self.metrics_tracker.get_norm_cls_loss(),
                         f"{train_test_val}_sigma_loss": self.metrics_tracker.get_norm_sigma_loss(),
@@ -79,8 +82,8 @@ class DecisioNetTrainer(BasicTrainer):
     def init_parser(self):
         parser = super().init_parser()
         parser.add_argument('--beta', type=float, help='weight for the sigma loss', default=0.0)
-        parser.add_argument('--always_binarize', action='store_true',
-                            help='do not use non-binary values in the binarization layer (i.e., perform only hard routing)')
+        parser.add_argument('--always_binarize', action='store_true', help='do not use non-binary values in the binarization layer (i.e., perform only hard routing)')
+        parser.add_argument('--include_entropy', action='store_true', help="Whether to do entrophy calculation")
         return parser
 
     def register_hooks(self, activation_dict):
@@ -90,9 +93,11 @@ class DecisioNetTrainer(BasicTrainer):
                 predictions = predictions.argmax(dim=1)
                 sigma = output[1].detach()
                 sigma_r = output[2].detach()
+                sigmas_b_r = output[3].detach()
                 activations_dict['predictions'] = torch.cat([activations_dict['predictions'], predictions])
                 activations_dict['sigma'] = torch.cat([activations_dict['sigma'], sigma])
                 activations_dict['sigma_r'] = torch.cat([activations_dict['sigma_r'], sigma_r])
+                activations_dict['sigmas_b_r'] = torch.cat([activations_dict['sigmas_b_r'], sigmas_b_r])
 
             return hook
 
@@ -102,6 +107,7 @@ class DecisioNetTrainer(BasicTrainer):
                 activation_dict['predictions'] = torch.Tensor([]).to(self.device)
                 activation_dict['sigma'] = torch.Tensor([]).to(self.device)
                 activation_dict['sigma_r'] = torch.Tensor([]).to(self.device)
+                activation_dict['sigmas_b_r'] = torch.Tensor([]).to(self.device)
                 handle = layer.register_forward_hook(get_activation(activation_dict))
                 hook_handles.append(handle)
         return hook_handles
@@ -115,6 +121,7 @@ class DecisioNetTrainer(BasicTrainer):
         predictions = activations_dict['predictions']
         sigmas = activations_dict['sigma']
         sigmas_r = activations_dict['sigma_r']
+        sigmas_b_r = activations_dict['sigmas_b_r']
 
         cls_targets = targets[:, 0]
         sigma_targets = targets[:, 1:]
@@ -122,6 +129,8 @@ class DecisioNetTrainer(BasicTrainer):
         metrics_df = pd.DataFrame(columns=['Scope', 'Class', 'Accuracy', 'Sigma Accuracy', 'Amount'])
 
         sigmas = sigmas.unsqueeze(1) if sigmas.dim() == 1 else sigmas
+        sigmas_b_r = sigmas_b_r.unsqueeze(1) if sigmas_b_r.dim() == 1 else sigmas_b_r
+
         # Entire Model Analysis
         print("Entire Model Analysis: ")
         cls_acc = (predictions == cls_targets).sum().item() / targets.size(0)
@@ -163,14 +172,14 @@ class DecisioNetTrainer(BasicTrainer):
             print(f"Accuracy: {cls_acc * 100:.2f}%", end=', ')
             print(f"Sigma accuracy: {sigma_acc * 100:.2f}%")
 
-        sigma_encoding = {0: 'branch_0', 1: 'branch_2', 2: 'branch_1', 3: 'branch_3'}
+        branch_num = 2 * sigmas.size(1)
+        sigma_encoding = {0: 'branch_0', 1: 'branch_2', 2: 'branch_1', 3: 'branch_3'} if branch_num == 4 else {0: 'branch_0', 3: 'branch_1'}
         encoded_sigma_results = torch.sum(sigmas * torch.tensor([1., 2.]).to(self.device), dim=1)
         if sigmas.size(1) == 1:
             pass
             # self.plot_class_analysis(predictions, cls_targets, sigmas, sigma_targets)
         # Each Branch Analysis
         print("Each Branch Analysis: ")
-        branch_num = 2 * sigmas.size(1)
         for ii in range(branch_num):
             tt = ii
             if branch_num == 2:
@@ -217,10 +226,54 @@ class DecisioNetTrainer(BasicTrainer):
                 print(f"Sigma accuracy: {branch_sigma_acc * 100:.2f}%")
 
         print('-----------------------------------------------')
-        sigmas_r_list = [sigmas_r[encoded_sigma_results == s][:, 0].cpu().numpy() for s, code in sigma_encoding.items()]
-        self.plot_density(*sigmas_r_list)
+        encoded_sigma_targets = torch.sum(sigma_targets * torch.tensor([1., 2.]).to(self.device), dim=1)
+        if branch_num == 2:
+            sigmas_r_list = [sigmas_r[encoded_sigma_targets == s][:, 0].cpu().numpy() for s, code in sigma_encoding.items()]
+        else:
+            sigmas_r_list = [(sigmas_r[:, 0]*sigmas_r[:, 1])[encoded_sigma_targets == s].cpu().numpy() for s, code in
+                             sigma_encoding.items()]
+        labels = [
+            "Embedding For The First Branch\Group",
+            "Embedding For The Second Branch\Group",
+            "Embedding For The Third Branch\Group",
+            "Embedding For The Fourth Branch\Group"
+        ]
+        plot_title = 'Density Plot of Scalars For The Branches'
+        self.plot_density(plot_title, labels, *sigmas_r_list)
+        if branch_num == 2:
+            sigmas_b_r_list = [sigmas_b_r[encoded_sigma_targets == s][:, 0].cpu().numpy() for s, code in sigma_encoding.items()]
+        else:
+            sigmas_b_r_list = [self.branches_probabilities(encoded_sigma_targets, sigmas_b_r)[encoded_sigma_targets == s][:, 0].cpu().numpy() for s, code in
+                               sigma_encoding.items()]
+        labels = [
+            "Routing Probability For The First Branch",
+            "Routing Probability For The Second Branch",
+            "Routing Probability For The Third Branch",
+            "Routing Probability For The Fourth Branch"
+        ]
+        plot_title = 'Density Plot of Routing Probability For The Branches'
+        # wrong_routing_sigmas_b_r = [sigmas_b_r[(encoded_sigma_targets == s) & (sigmas != sigma_targets).squeeze(1)][:, 0].cpu().numpy() for
+        #         s, code in sigma_encoding.items()]
+        self.plot_density(plot_title, labels, *sigmas_b_r_list)
         return metrics_df
 
+    def plot_density(self, plot_title, labels, *args):
+        colors = ["blue", "red", "green", "purple"]
+
+        plt.figure(figsize=(10, 6))
+
+        for i, arg in enumerate(args):
+            sns.histplot(arg, color=colors[i], label=labels[i], kde=False)
+
+        plt.xlabel('Scalar Value', fontsize=14)
+        plt.ylabel('Density', fontsize=14)
+        plt.title(plot_title, fontsize=16)
+        plt.legend(fontsize=12)
+        plt.grid(True)
+        plt.xticks(fontsize=12)
+        plt.yticks(fontsize=12)
+        plt.tight_layout()
+        plt.show()
     def plot_class_analysis(self, predictions, cls_targets, sigmas, sigma_targets):
         num_images = 0
         for cls in self.classes_indices:
@@ -267,29 +320,23 @@ class DecisioNetTrainer(BasicTrainer):
 
         self.plot_density(sigmas_r[sigmas == 0].cpu().numpy(), sigmas_r[sigmas == 1].cpu().numpy())
 
-    def plot_density(self, *args):
-        colors = ["blue", "red", "green", "purple"]
-        labels = [
-            "Scalars For The First Branch",
-            "Scalars For The Second Branch",
-            "Scalars For The Third Branch",
-            "Scalars For The Fourth Branch"
-        ]
+    def branches_probabilities(self, encoded_sigma_results, data_tensor):
 
-        plt.figure(figsize=(10, 6))
+        output_tensor = torch.full((data_tensor.size(0), 1), -1.0)
 
-        for i, arg in enumerate(args):
-            sns.kdeplot(arg, shade=True, color=colors[i], label=labels[i])
+        for i in range(encoded_sigma_results.size(0)):
+            val = encoded_sigma_results[i].item()
 
-        plt.xlabel('Scalar Value', fontsize=14)
-        plt.ylabel('Density', fontsize=14)
-        plt.title('Density Plot of Scalars For The Branches', fontsize=16)
-        plt.legend(fontsize=12)
-        plt.grid(True)
-        plt.xticks(fontsize=12)
-        plt.yticks(fontsize=12)
-        plt.tight_layout()
-        plt.show()
+            if val == 0:
+                output_tensor[i] = (1 - data_tensor[i, 0]) * (1 - data_tensor[i, 1])
+            elif val == 1:
+                output_tensor[i] = data_tensor[i, 0] * (1 - data_tensor[i, 1])
+            elif val == 2:
+                output_tensor[i] = (1 - data_tensor[i, 0]) * data_tensor[i, 1]
+            elif val == 3:
+                output_tensor[i] = data_tensor[i, 0] * data_tensor[i, 1]
+
+        return output_tensor
     # noinspection PyTypeChecker
     def sigma_analysis(self):
         activations_dict = {}
@@ -376,7 +423,6 @@ class WideResNetDecisioNetTrainer(DecisioNetTrainer):
 
     def init_lr_scheduler(self):
         return torch.optim.lr_scheduler.MultiStepLR(self.optimizer, [60, 120, 160], gamma=0.2, verbose=True)
-
     def lr_scheduler_step(self, epoch=-1, train_acc=None, train_loss=None, test_acc=None, test_loss=None):
         self.lr_scheduler.step()
 
@@ -388,7 +434,11 @@ class WideResNetDecisioNetTrainer(DecisioNetTrainer):
     def _init_model(self):
         num_in_channels = INPUT_SIZE[self.dataset_name][0]
         num_classes = NUM_CLASSES[self.dataset_name]
-        model = WideResNet_HyperDecisioNet_2_split(28, 10, dropout_p=0.3, num_classes=num_classes, num_in_channels=num_in_channels)
+        if self.wrn_cfg_name == '100_baseline':
+            model = WideResNet_HyperDecisioNet_2_split(28, 10, dropout_p=0.3, num_classes=num_classes, num_in_channels=num_in_channels)
+        else:
+            model = WideResNet_HyperDecisioNet_1_split(28, 10, dropout_p=0.3, num_classes=num_classes,
+                                                       num_in_channels=num_in_channels)
         for m in model.modules():
             if isinstance(m, nn.Conv2d):
                 nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
@@ -399,7 +449,7 @@ class WideResNetDecisioNetTrainer(DecisioNetTrainer):
 
     def init_parser(self):
         parser = super().init_parser()
-        parser.add_argument('--wrn_cfg_name', type=str, default='100_baseline_single_early', help='Name of the Wide-ResNet config')
+        parser.add_argument('--wrn_cfg_name', type=str, default='100_baseline', help='Name of the Wide-ResNet config')
         return parser
 
     def _init_config_attributes(self):
@@ -420,7 +470,7 @@ class WideResNetDecisioNetTrainer(DecisioNetTrainer):
         cls_targets, *sigma_targets = targets
         sigma_targets = torch.column_stack(sigma_targets)
         binarize = self.always_binarize or random.random() > 0.5
-        outputs, sigma_b, sigma_r = self.model(inputs, binarize=binarize)
+        outputs, sigma_b, sigma_r, _ = self.model(inputs, binarize=binarize)
         sigma_b = sigma_b.unsqueeze(1) if sigma_b.dim() == 1 else sigma_b
         # print(f'Cls correct: {sum(torch.argmax(outputs, 1)==cls_targets)}')
         # print(f'Sigma correct: {sum(sigmas==sigma_targets)}\n')
@@ -436,7 +486,10 @@ if __name__ == '__main__':
     input_tensor = torch.randn(1, 3, 32, 32).to(trainer.device)
     # flops = FlopCountAnalysis(trainer.model, input_tensor)
     # print(f'Number Of Flops: {flops.total()}')
-    print(f'Number Of Parameters: {sum(p.numel() for p in trainer.model.parameters() if p.requires_grad)}')
+    # print(f'Number Of Flops: {flops.total()}')
+    params_num = sum(p.numel() for p in trainer.model.parameters() if p.requires_grad)
+    print(f'Number Of Parameters: {params_num}')
     # trainer.train_model()
     results = trainer.evaluate()
-    prepare_output_to_local(results)
+    experiment_name = f"{trainer.dataset_name}_{trainer.config['exp_name']}_params_num_{params_num}"
+    prepare_output_to_local(results, experiment_name)

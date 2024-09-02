@@ -368,8 +368,6 @@ class BasicTrainer:
                 self._single_iteration(inputs, targets, training, epoch)
                 # msg_to_display = self.metrics_tracker.get_message_to_display(batch_idx)
                 # print(msg_to_display)
-                # if not self.use_wandb:  # or self.device == 'cpu':
-                #     progress_bar(batch_idx, num_batches, msg_to_display)
             end_time = time.time()
 
         msg_to_display = self.metrics_tracker.get_message_to_display(num_batches)

@@ -17,4 +17,5 @@ build/
 .coverage
 
 scripts/prepare_results_to_local.py
+delete
 .ipynb_checkpoints

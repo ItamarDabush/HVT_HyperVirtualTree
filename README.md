@@ -24,7 +24,7 @@ Note: it is advised to set PYTHONPATH to the root directory
 python trainers/baseline_trainers.py -d <dataset name>
 # (The dataset name is the only positional argument)
 
-# For training a HVT model, make sure the correct DN model is set and run: 
+# For training a HVT model, make sure the correct HVT model is set and run: 
 python trainers/HVT_trainers.py -d <dataset name> --beta <value>
 ```
 ### Optional arguments (all trainers):
@@ -74,10 +74,9 @@ python trainers/HVT_trainers.py -d <dataset name> --beta <value>
 #### Weights & Biases
 The training framework fully supports logging metrics to the wonderful [Weights & Biases](www.wandb.ai) ML-Ops framework. Simply add `--use_wandb` when training; 
 Accuracy, loss and learning rates are logged automatically.
+
 ## Issues
 If you encounter any running issues, feel free to open an issue. We'll try to look into it and fix as needed.
-
-this code based on the official code of ["DecisioNet: A Binary-Tree Structured Neural Network"] by Noam Gottlieb and Michael Werman.
 
 ## Citation
 If you find this code useful, please cite our paper:
@@ -90,3 +89,7 @@ If you find this code useful, please cite our paper:
     year      = 
     pages     = 
 }
+```
+
+## Acknowledgements
+this code based on the official code of ["DecisioNet: A Binary-Tree Structured Neural Network"] by Noam Gottlieb and Michael Werman.

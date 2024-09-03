@@ -20,7 +20,7 @@ from data.dataloaders import BasicDataLoaders
 from data.datasets import BasicDatasets
 from data.transforms import BasicTransforms, DATA_SETS_MEAN, DATA_SETS_STD, ImageNetTransforms
 from utils.common import unnormalize_image
-from utils.constants import NUM_CLASSES, INPUT_SIZE, CLASSES_NAMES, DATASET_NAMES, ENCODING_CLASS_HYPER_DIC
+from utils.constants import NUM_CLASSES, INPUT_SIZE, CLASSES_NAMES, DATASET_NAMES
 from utils.early_stopping import EarlyStopping
 from utils.metrics_tracker import MetricsTracker, NotMetricsTracker, BinaryMetricsTracker
 from utils.progress_bar import progress_bar
@@ -51,7 +51,6 @@ class BasicTrainer:
             self.config = config
         print("Running with the following configuration:")
         pprint.pprint(self.config, width=1)
-        self.scale_factor = self.config["scale_factor"]
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.num_gpus = torch.cuda.device_count()
         # self.num_gpus = 1  # comment if parallel is desired
@@ -147,18 +146,6 @@ class BasicTrainer:
         parser.add_argument('--resume_run_id', type=str, default=None,
                             help="wandb run-id for resuming crashed runs (warning: this was not used thoroughly; "
                                  "use with caution)")
-        parser.add_argument('--network_type', type=str, default=None,
-                            help="not specified for basic network, "
-                                 "hyper for basic with hyper network, "
-                                 "hyper-cls for hyper with classification of one class at each branch, "
-                                 "hyper-cls-new for new approach of hyper-cls"
-                                 "ensemble-voting, "
-                                 "ensemble-stacking, "
-                                 "hyper-ensemble-voting, "
-                                 "hyper-ensemble-stacking")
-        parser.add_argument('--scale_factor', type=int, default=64,
-                            help="when using multi branch network use scale factor")
-
         return parser
 
     def init_lr_scheduler(self):
@@ -334,12 +321,7 @@ class BasicTrainer:
         for epoch in range(self.num_epochs):
             self.metrics_tracker.reset(num_batches)
             self.optimizer.zero_grad()
-            if self.config["network_type"] == "hyper-ensemble":
-                outputs, loss = self._hyper_ensemble_feed_forward(inputs, targets)
-            elif self.config["network_type"] == "hyper":
-                outputs, loss = self._hyper_feed_forward(inputs, targets)
-            else:
-                outputs, loss = self._feed_forward(inputs, targets)
+            outputs, loss = self._feed_forward(inputs, targets)
             loss.backward()
             self.optimizer.step()
             if (epoch + 1) % 10 == 0:
@@ -387,11 +369,6 @@ class BasicTrainer:
         else:
             msg_to_display += f' | Avg. Batch Processing Time: {int(1000 * (end_time - start_time) / num_batches)} ms'
             print(msg_to_display)
-
-        # if epoch % 10 == 0 and f'decisio' not in self.config["network_type"]:
-        #     acc_msg_to_display = f'Tot_class_acc: {self.metrics_tracker.get_class_accuracy(num_batches)}'
-        #     print(acc_msg_to_display)
-
         if train_test_val == 'test':
             top1_acc = 100. * norm_top1_acc
             if top1_acc > self.best_top1_acc:

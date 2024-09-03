@@ -1,6 +1,7 @@
-# HyperDecisioNet
-This code uses hyper network and ensemble learning to improve a classification network.
-using hyper-network to create 2 branches of decisionet NiN.
+# HVT: HyperVirtualTree
+This is the official implementation of HVT. We utilized a hypernetwork to generate tree 
+branches that are differentiable only by the dynamically generated input to the hypernetwork.
+
 
 ## Prerequisites
 - Python 3.7+
@@ -19,8 +20,8 @@ Note: it is advised to set PYTHONPATH to the root directory
 python trainers/baseline_trainers.py -d <dataset name>
 # (The dataset name is the only positional argument)
 
-# For training a DecisioNet model, make sure the correct DN model is set and run: 
-python trainers/decisionet_trainers.py -d <dataset name>
+# For training a HVT model, make sure the correct DN model is set and run: 
+python trainers/HVT_trainers.py -d <dataset name> --beta <value>
 ```
 ### Optional arguments (all trainers):
 ```
@@ -57,12 +58,14 @@ python trainers/decisionet_trainers.py -d <dataset name>
   --resume_run_id RESUME_RUN_ID
                         wandb run-id for resuming crashed runs (warning: this
                         was not used thoroughly; use with caution)
+  
 ```
-### Additional optional arguments (DecisioNet trainers only):
+### Additional optional arguments (HVT trainers only):
 ```
  --beta BETA           weight for the sigma loss
  --always_binarize     do not use non-binary values in the binarization layer
                        (i.e., perform only hard routing)
+ --include_entropy     include printing branch entropy
 ```
 #### Weights & Biases
 The training framework fully supports logging metrics to the wonderful [Weights & Biases](www.wandb.ai) ML-Ops framework. Simply add `--use_wandb` when training; 

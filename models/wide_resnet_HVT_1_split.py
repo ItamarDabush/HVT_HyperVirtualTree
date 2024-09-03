@@ -122,7 +122,7 @@ class WideResNet_HyperDecisioNet_1_split(nn.Module):
     def __init__(self, depth, k, dropout_p, num_classes, num_in_channels, norm_layer=None):
         super().__init__()
         n = (depth - 4) / 6
-        stage_sizes = [16, 16 * k, 32 * k, 64 * k]
+        stage_sizes = [16, 16 * k, 24 * k, 48 * k]
         in_planes = 16
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d

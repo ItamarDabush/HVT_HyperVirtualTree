@@ -1,6 +1,8 @@
 from torchinfo import summary
 
 from models.wide_resnet import wide_resnet28_10
+from models.wide_resnet_HVT_2_split import WideResNet_HyperDecisioNet_2_split
+from models.wide_resnet_HVT_1_split import WideResNet_HyperDecisioNet_1_split
 from utils.constants import INPUT_SIZE, NUM_CLASSES
 
 
@@ -22,5 +24,9 @@ if __name__ == '__main__':
     c, h, w = INPUT_SIZE[ds_name]
     num_classes = NUM_CLASSES[ds_name]
     cfg_name = '100_baseline_single_late'
-    full_net = wide_resnet28_10(num_classes=num_classes)
-    summary(full_net, (1, c, h, w))
+    full_net = WideResNet_HyperDecisioNet_1_split(28, 10, dropout_p=0.3, num_classes=num_classes,
+                                               num_in_channels=c)
+    # full_net = wide_resnet28_10(num_classes=num_classes)
+    print(summary(full_net, (1, c, h, w)))
+
+

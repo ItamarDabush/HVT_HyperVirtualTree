@@ -1,12 +1,11 @@
 # HVT: HyperVirtualTree
-This is the official implementation of HVT. We utilized a hypernetwork to generate tree 
-branches that are differentiable only by the dynamically generated input to the hypernetwork.
+This is the official implementation of HVT. We utilized a hypernetwork to generate tree branches that are differentiable only by the dynamically generated input to the hypernetwork.
 
 ![hyper_virtual_tree_concept.png](images%2Fhyper_virtual_tree_concept.png)
 
 **left image**: normal decision trees.
-**right image**: our proposed method, the branches virtual in the sense that the only diffrence 
-between them is diffrent input to the hypernetwork that creates the filter weights.
+
+**right image**: our proposed method, the branches virtual in the sense that the only diffrence between them is the input to the hypernetwork that creates the filter weights. this input generated dynamically at run-time.
 
 ## Prerequisites
 - Python 3.7+

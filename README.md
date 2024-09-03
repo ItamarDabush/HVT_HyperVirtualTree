@@ -3,6 +3,7 @@ This is the official implementation of HVT. We utilized a hypernetwork to genera
 branches that are differentiable only by the dynamically generated input to the hypernetwork.
 
 ![hyper_virtual_tree_concept.png](images%2Fhyper_virtual_tree_concept.png)
+
 left image: normal decision trees.
 right image: out proposed method, the branches virtual in the sense that the only diffrence 
 between them is diffrent input to the hypernetwork that creates the filter weights.

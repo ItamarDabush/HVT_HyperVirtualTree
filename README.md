@@ -2,6 +2,7 @@
 This is the official implementation of HVT. We utilized a hypernetwork to generate tree 
 branches that are differentiable only by the dynamically generated input to the hypernetwork.
 
+![hyper_virtual_tree_concept.png](images%2Fhyper_virtual_tree_concept.png)
 
 ## Prerequisites
 - Python 3.7+

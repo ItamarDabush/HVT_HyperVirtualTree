@@ -1,11 +1,8 @@
-from typing import Any, Tuple
-
-import random
 import torch
 import torch.nn as nn
 from torch import Tensor
 import torch.nn.functional as F
-from custom_layers.selection_layers import BinarySelectionLayer, EmbeddingBinarySelectionLayer
+from custom_layers.selection_layers import EmbeddingBinarySelectionLayer
 
 ROOT_URL = 'https://github.com/yoshitomo-matsubara/torchdistill/releases/download'
 MODEL_URL_DICT = {
@@ -119,11 +116,110 @@ class WideHyperBasicBlock(nn.Module):
         out = torch.cat(outputs, dim=0)
         out += self.shortcut(x)
         return out
-class WideResNet_HyperDecisioNet_2_split(nn.Module):
-    def __init__(self, depth, k, dropout_p, num_classes, num_in_channels, norm_layer=None):
+
+class WideResNet_HyperDecisioNet_1_split(nn.Module):
+    def __init__(self, depth, k, dropout_p, num_classes, num_in_channels, stage_sizes=None, norm_layer=None):
         super().__init__()
         n = (depth - 4) / 6
-        stage_sizes = [16, 16 * k, 24 * k, 48 * k]
+        if stage_sizes is None:
+            stage_sizes = [16, 16 * k, 24 * k, 48 * k]
+        else:
+            stage_sizes = [16, stage_sizes[0] * k, stage_sizes[1] * k, stage_sizes[2] * k]
+        in_planes = 16
+        if norm_layer is None:
+            norm_layer = nn.BatchNorm2d
+
+        self.conv1 = nn.Conv2d(num_in_channels, stage_sizes[0], kernel_size=3, stride=1, padding=1, bias=False)
+        self.layer1 = self.make_wide_layer(in_planes, stage_sizes[1], n, dropout_p, 1)
+        self.layer2 = self.make_hyper_wide_layer(stage_sizes[1], stage_sizes[2], n, dropout_p, 2)
+        self.layer3 = self.make_wide_layer(stage_sizes[2], stage_sizes[3], n, dropout_p, 2)
+        self.bn1 = norm_layer(stage_sizes[3])
+        self.relu = nn.ReLU(inplace=True)
+        self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
+        self.fc = nn.Linear(stage_sizes[3], num_classes)
+
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+            elif isinstance(m, (nn.BatchNorm2d, nn.GroupNorm)):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+
+        self.binary_selection_layer1 = EmbeddingBinarySelectionLayer(stage_sizes[1])
+        self.binary_selection_layer2 = EmbeddingBinarySelectionLayer(stage_sizes[2])
+
+    def create_sigmas(self, sigmas_b, sigmas_r, binarize):
+        if self.training:
+            if binarize:
+                sigmas0 = (1 - sigmas_b).unsqueeze(1) * sigmas_r[:, 0].unsqueeze(1)
+                sigmas1 = sigmas_b.unsqueeze(1) * sigmas_r[:, 1].unsqueeze(1)
+            else:
+                sigmas0 = sigmas_r[:, 0].unsqueeze(1)
+                sigmas1 = sigmas_r[:, 1].unsqueeze(1)
+        else:
+            sigmas0 = (1 - sigmas_b).unsqueeze(1)
+            sigmas1 = sigmas_b.unsqueeze(1)
+        return sigmas0, sigmas1
+    def _forward_impl(self, x: Tensor, binarize = None) -> Tensor:
+        # See note [TorchScript super()]
+        x = self.conv1(x)
+        x = self.layer1(x)
+        sigma_r, sigma_b, sigma_b_r = self.binary_selection_layer1(x, binarize)
+        sigma_0, sigma_1 = self.create_sigmas(sigma_b, sigma_r, binarize)
+        for i, layer in enumerate(self.layer2):
+            if isinstance(layer, WideHyperBasicBlock):
+                x0 = layer(x, h_in=sigma_0, binary=binarize)
+                x1 = layer(x, h_in=sigma_1, binary=binarize)
+            else:
+                x0 = layer(x0)
+                x1 = layer(x1)
+        x = x0 + x1
+        x = self.layer3(x)
+        x = self.bn1(x)
+        x = self.relu(x)
+        x = self.avgpool(x)
+        x = torch.flatten(x, 1)
+        x = self.fc(x)
+        return x, sigma_b, sigma_r, sigma_b_r
+
+    def forward(self, x: Tensor, binarize=None) -> Tensor:
+        return self._forward_impl(x, binarize)
+    @staticmethod
+    def make_wide_layer(in_planes: int,
+                        out_planes: int,
+                        num_blocks: int,
+                        dropout_rate: float,
+                        stride: int) -> nn.Sequential:
+        strides = [stride] + [1] * (int(num_blocks) - 1)
+        layers = []
+        for stride in strides:
+            layers.append(WideBasicBlockV2(in_planes, out_planes, dropout_rate, stride))
+            in_planes = out_planes
+        return nn.Sequential(*layers)
+
+    @staticmethod
+    def make_hyper_wide_layer(in_planes: int,
+                        out_planes: int,
+                        num_blocks: int,
+                        dropout_rate: float,
+                        stride: int) -> nn.Sequential:
+        strides = [stride] + [1] * (int(num_blocks) - 1)
+        layers = []
+        layers.append(WideHyperBasicBlock(in_planes, out_planes, dropout_rate, stride))
+        in_planes = out_planes
+        for stride in strides[1:]:
+            layers.append(WideBasicBlockV2(in_planes, out_planes, dropout_rate, stride))
+            in_planes = out_planes
+        return nn.Sequential(*layers)
+
+class WideResNet_HyperDecisioNet_2_split(nn.Module):
+    def __init__(self, depth, k, dropout_p, num_classes, num_in_channels, stage_sizes, norm_layer=None):
+        super().__init__()
+        n = (depth - 4) / 6
+        if stage_sizes is None:
+            stage_sizes = [16, 16 * k, 24 * k, 48 * k]
+        else:
+            stage_sizes = [16, stage_sizes[0] * k, stage_sizes[1] * k, stage_sizes[2] * k]
         in_planes = 16
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d

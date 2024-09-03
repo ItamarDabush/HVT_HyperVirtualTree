@@ -10,7 +10,6 @@ from scripts.prepare_results_to_local import prepare_output_to_local
 from data.transforms import BasicTransforms, ImageNetTransforms
 from models.network_in_network import NetworkInNetwork
 from models.wide_resnet import wide_resnet28_10
-from models.basic_classifier import BasicClassifier, HyperBasicClassifier, EnsembleBasicClassifier
 from trainers.basic_trainer import BasicTrainer
 from utils.constants import INPUT_SIZE, CLASSES_NAMES
 from utils.early_stopping import EarlyStopping
@@ -26,10 +25,6 @@ class NetworkInNetworkTrainer(BasicTrainer):
 
     def _init_model(self):
         num_in_channels = INPUT_SIZE[self.dataset_name][0]
-        # model = NetworkInNetwork(num_classes=self.num_classes, num_in_channels=num_in_channels,
-        #                          config=[(16, 3, 1, 1), ('M', 2, None, 0), (32, 3, 1, 1), ('M', 2, None, 0),
-        #                                  ('V', int(32 * ((INPUT_SIZE[self.dataset_name][1]) / 4) ** 2)),
-        #                                  ('fc', 128, True), ('fc', 10, False)])
         model = NetworkInNetwork(num_classes=self.num_classes, num_in_channels=num_in_channels,
                                  config=[(192, 5), (160, 1), (96, 1), 'M', 'D', (192, 5), (192, 1), (192, 1), 'A', 'D', (192, 3), (192, 1), (10, 1)])
         for m in model.modules():
@@ -136,32 +131,13 @@ class VGG11Trainer(BasicTrainer):
         return model
 
 
-class BasicClassifierTrainer(BasicTrainer):
-
-    def __init__(self):
-        super(BasicClassifierTrainer, self).__init__()
-
-    def init_early_stopping(self):
-        early_stopping_params = self.early_stopping_params
-        if early_stopping_params is None:
-            early_stopping_params = {'mode': 'min', 'patience': 30, 'verbose': True}
-        return EarlyStopping(**early_stopping_params)
-
-    def _init_model(self):
-        set_random_seed(0)
-        model = BasicClassifier(num_classes=self.num_classes, image_size=self.image_size)
-        model.apply(functools.partial(weights_init_kaiming, scale=0.1))
-        return model
-
-
 if __name__ == '__main__':
-    # trainer = NetworkInNetworkTrainer()
-    # trainer = BasicClassifierTrainer()
-    trainer = WideResNetTrainer()
+    trainer = NetworkInNetworkTrainer()
+    # trainer = WideResNetTrainer()
     params_num = sum(p.numel() for p in trainer.model.parameters() if p.requires_grad)
     print(f'Number Of Parameters: {params_num}')
 
-    # trainer.train_model()
-    results = trainer.evaluate()
-    experiment_name = f"{trainer.dataset_name}_{trainer.config['exp_name']}_params_num_{params_num}"
-    prepare_output_to_local(results, experiment_name)
+    trainer.train_model()
+    # results = trainer.evaluate()
+    # experiment_name = f"{trainer.dataset_name}_{trainer.config['exp_name']}_params_num_{params_num}"
+    # prepare_output_to_local(results, experiment_name)

@@ -7,25 +7,22 @@ import matplotlib
 from matplotlib import pyplot as plt
 import seaborn as sns
 import pandas as pd
-from fvcore.nn import FlopCountAnalysis
 
+from trainers.basic_trainer import BasicTrainer
 from scripts.prepare_results_to_local import prepare_output_to_local
 # from custom_layers.losses import WeightedMSELoss
 from data.datasets import FilteredRelabeledDatasets
 from models.nin_HVT import NIN_HyperDecisioNet
-from trainers.basic_trainer import BasicTrainer
 from utils.constants import LABELS_MAP, CLASSES_NAMES, INPUT_SIZE, NUM_CLASSES
 from utils.metrics_tracker import SigmaLossMetricsTracker
 from utils.common_tools import set_random_seed, weights_init_kaiming
 import torch.nn.init as init
-from models.wide_resnet_HVT_2_split import WideResNet_HyperDecisioNet_2_split
-from models.wide_resnet_HVT_1_split import WideResNet_HyperDecisioNet_1_split
+from models.wide_resnet_HVT import WideResNet_HyperDecisioNet_2_split, WideResNet_HyperDecisioNet_1_split
 
-WRESNET_STAGE_SIZES = {'100_baseline': [[(16, 1)], [(16, 2)], [(16, 2)]],
-                       '100_baseline_single_early': [[(16, 1)], [(16, 2), (32, 2)]],
-                       '100_baseline_single_late': [[(16, 1), (32, 2)], [(32, 2)]]}
+WRESNET_STAGE_SIZES = {'100_baseline': ([16, 16, 16], 3),
+                       '100_baseline_single_early': ([16, 16, 32], 2)}
 
-class DecisioNetTrainer(BasicTrainer):
+class HVT_Trainer(BasicTrainer):
 
     def __init__(self):
         super().__init__()
@@ -383,7 +380,7 @@ class DecisioNetTrainer(BasicTrainer):
         return sigma_weights
 
 
-class NIN_HyperDecisioNetTrainer(DecisioNetTrainer):
+class NIN_HVT_Trainer(HVT_Trainer):
 
     def _init_model(self):
         set_random_seed(0)
@@ -416,7 +413,7 @@ class NIN_HyperDecisioNetTrainer(DecisioNetTrainer):
             if m.bias is not None:
                 init.constant_(m.bias, 0.0)
 
-class WideResNetDecisioNetTrainer(DecisioNetTrainer):
+class WideResNet_HVT_Trainer(HVT_Trainer):
 
     def init_transforms(self, padding_mode='constant'):
         return super().init_transforms(padding_mode='reflect')
@@ -435,10 +432,13 @@ class WideResNetDecisioNetTrainer(DecisioNetTrainer):
         num_in_channels = INPUT_SIZE[self.dataset_name][0]
         num_classes = NUM_CLASSES[self.dataset_name]
         if self.wrn_cfg_name == '100_baseline':
-            model = WideResNet_HyperDecisioNet_2_split(28, 10, dropout_p=0.3, num_classes=num_classes, num_in_channels=num_in_channels)
+            stage_sizes = WRESNET_STAGE_SIZES['100_baseline'][0]
+            model = WideResNet_HyperDecisioNet_2_split(28, 10, dropout_p=0.3, num_classes=num_classes,
+                                                       num_in_channels=num_in_channels, stage_sizes=stage_sizes)
         else:
+            stage_sizes = WRESNET_STAGE_SIZES['100_baseline_single_early'][0]
             model = WideResNet_HyperDecisioNet_1_split(28, 10, dropout_p=0.3, num_classes=num_classes,
-                                                       num_in_channels=num_in_channels)
+                                                       num_in_channels=num_in_channels, stage_sizes=stage_sizes)
         for m in model.modules():
             if isinstance(m, nn.Conv2d):
                 nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
@@ -458,7 +458,7 @@ class WideResNetDecisioNetTrainer(DecisioNetTrainer):
 
     def init_data_sets(self):
         labels_map = dict(LABELS_MAP[f'{self.dataset_name}_WRN'])
-        num_levels_in_tree = len(WRESNET_STAGE_SIZES[self.wrn_cfg_name])
+        num_levels_in_tree = WRESNET_STAGE_SIZES[self.wrn_cfg_name][1]
         for k, v in labels_map.items():
             labels_map[k] = v[:num_levels_in_tree]
         return FilteredRelabeledDatasets(self.transforms, use_validation=self.use_validation,
@@ -481,15 +481,12 @@ class WideResNetDecisioNetTrainer(DecisioNetTrainer):
         return outputs, combined_loss
 
 if __name__ == '__main__':
-    # trainer = WideResNetDecisioNetTrainer()
-    trainer = NIN_HyperDecisioNetTrainer()
+    # trainer = WideResNet_HVT_Trainer()
+    trainer = NIN_HVT_Trainer()
     input_tensor = torch.randn(1, 3, 32, 32).to(trainer.device)
-    # flops = FlopCountAnalysis(trainer.model, input_tensor)
-    # print(f'Number Of Flops: {flops.total()}')
-    # print(f'Number Of Flops: {flops.total()}')
     params_num = sum(p.numel() for p in trainer.model.parameters() if p.requires_grad)
     print(f'Number Of Parameters: {params_num}')
-    # trainer.train_model()
-    results = trainer.evaluate()
-    experiment_name = f"{trainer.dataset_name}_{trainer.config['exp_name']}_params_num_{params_num}"
-    prepare_output_to_local(results, experiment_name)
+    trainer.train_model()
+    # results = trainer.evaluate()
+    # experiment_name = f"{trainer.dataset_name}_{trainer.config['exp_name']}_params_num_{params_num}"
+    # prepare_output_to_local(results, experiment_name)

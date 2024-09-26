@@ -76,9 +76,9 @@ class EmbeddingBinarySelectionLayer(SelectionLayer):
             x = self.bn(x)
         sigmas = self.fc(x)
         if self.training:
-            x_b, _ = self.binarization(sigmas[:, 2], binarize=True)
+            x_b, x_b_r = self.binarization(sigmas[:, 2], binarize=True)
             x, _ = self.binarization(sigmas[:, 0:2], binarize=False)
-            return x, x_b, None
+            return x, x_b, x_b_r
         else:
             x_b, x_b_r = self.binarization(sigmas[:, 2])
             _, sat_sigma = self.binarization(sigmas[:, 0:2])

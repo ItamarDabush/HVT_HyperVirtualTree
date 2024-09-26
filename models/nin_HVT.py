@@ -115,7 +115,11 @@ class SharedNet(nn.Module):
         else:
             x0, s0 = self.hyper(x, (1 - sigmas_b).unsqueeze(1), binary=True)
             x1, s1 = self.hyper(x, sigmas_b.unsqueeze(1), binary=True)
-        x = x0 + x1
+
+        sigma_broadcasted = sigmas_b[..., None, None, None] if x0.ndim == 4 else sigmas_b
+        x = (1 - sigma_broadcasted) * x0 + (sigma_broadcasted) * x1
+
+        # x = x0 + x1
         x = self.after_features(x)
         return x, sigmas_b, sigmas_r, sigmas_b_r
 

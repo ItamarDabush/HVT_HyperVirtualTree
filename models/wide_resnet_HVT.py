@@ -165,15 +165,16 @@ class WideResNet_HyperDecisioNet_1_split(nn.Module):
         x = self.conv1(x)
         x = self.layer1(x)
         sigma_r, sigma_b, sigma_b_r = self.binary_selection_layer1(x, binarize)
-        sigma_0, sigma_1 = self.create_sigmas(sigma_b, sigma_r, binarize)
+        # sigma_0, sigma_1 = self.create_sigmas(sigma_b, sigma_r, binarize)
         for i, layer in enumerate(self.layer2):
             if isinstance(layer, WideHyperBasicBlock):
-                x0 = layer(x, h_in=sigma_0, binary=binarize)
-                x1 = layer(x, h_in=sigma_1, binary=binarize)
+                x0 = layer(x, h_in=sigma_r[:, 0].unsqueeze(1), binary=binarize)
+                x1 = layer(x, h_in=sigma_r[:, 1].unsqueeze(1), binary=binarize)
             else:
                 x0 = layer(x0)
                 x1 = layer(x1)
-        x = x0 + x1
+        sigma_broadcasted = sigma_b[..., None, None, None] if x0.ndim == 4 else sigma_b
+        x = (1 - sigma_broadcasted) * x0 + (sigma_broadcasted) * x1
         x = self.layer3(x)
         x = self.bn1(x)
         x = self.relu(x)
@@ -260,25 +261,28 @@ class WideResNet_HyperDecisioNet_2_split(nn.Module):
         x = self.conv1(x)
         x = self.layer1(x)
         sigmas_r_1, sigmas_b_1, sigmas_b_r_1 = self.binary_selection_layer1(x, binarize)
-        sigmas_1_0, sigmas_1_1 = self.create_sigmas(sigmas_b_1, sigmas_r_1, binarize)
+        # sigmas_1_0, sigmas_1_1 = self.create_sigmas(sigmas_b_1, sigmas_r_1, binarize)
         for i, layer in enumerate(self.layer2):
             if isinstance(layer, WideHyperBasicBlock):
-                x0 = layer(x, h_in=sigmas_1_0, binary=binarize)
-                x1 = layer(x, h_in=sigmas_1_1, binary=binarize)
+                x0 = layer(x, h_in=sigmas_r_1[:, 0].unsqueeze(1), binary=binarize)
+                x1 = layer(x, h_in=sigmas_r_1[:, 1].unsqueeze(1), binary=binarize)
             else:
                 x0 = layer(x0)
                 x1 = layer(x1)
-        x = x0 + x1
+        sigma_broadcasted = sigmas_b_1[..., None, None, None] if x0.ndim == 4 else sigmas_b_1
+        x = (1 - sigma_broadcasted) * x0 + (sigma_broadcasted) * x1
         sigmas_r_2, sigmas_b_2, sigmas_b_r_2 = self.binary_selection_layer2(x, binarize)
-        sigmas_2_0, sigmas_2_1 = self.create_sigmas(sigmas_b_2, sigmas_r_2, binarize)
+        # sigmas_2_0, sigmas_2_1 = self.create_sigmas(sigmas_b_2, sigmas_r_2, binarize)
         for i, layer in enumerate(self.layer3):
             if isinstance(layer, WideHyperBasicBlock):
-                x0 = layer(x, h_in=sigmas_2_0, binary=binarize)
-                x1 = layer(x, h_in=sigmas_2_1, binary=binarize)
+                x0 = layer(x, h_in=sigmas_r_2[:, 0].unsqueeze(1), binary=binarize)
+                x1 = layer(x, h_in=sigmas_r_2[:, 0].unsqueeze(1), binary=binarize)
             else:
                 x0 = layer(x0)
                 x1 = layer(x1)
-        x = x0 + x1
+
+        sigma_broadcasted = sigmas_b_2[..., None, None, None] if x0.ndim == 4 else sigmas_b_2
+        x = (1 - sigma_broadcasted) * x0 + (sigma_broadcasted) * x1
         x = self.bn1(x)
         x = self.relu(x)
         x = self.avgpool(x)

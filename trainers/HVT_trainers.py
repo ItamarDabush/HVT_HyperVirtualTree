@@ -481,12 +481,12 @@ class WideResNet_HVT_Trainer(HVT_Trainer):
         return outputs, combined_loss
 
 if __name__ == '__main__':
-    # trainer = WideResNet_HVT_Trainer()
-    trainer = NIN_HVT_Trainer()
+    trainer = WideResNet_HVT_Trainer()
+    # trainer = NIN_HVT_Trainer()
     input_tensor = torch.randn(1, 3, 32, 32).to(trainer.device)
     params_num = sum(p.numel() for p in trainer.model.parameters() if p.requires_grad)
     print(f'Number Of Parameters: {params_num}')
     trainer.train_model()
-    # results = trainer.evaluate()
+    results = trainer.evaluate()
     # experiment_name = f"{trainer.dataset_name}_{trainer.config['exp_name']}_params_num_{params_num}"
     # prepare_output_to_local(results, experiment_name)
